@@ -1,7 +1,7 @@
 PYTHON ?= python3
 AMAP_KEY ?=
 
-.PHONY: run demo demo-page
+.PHONY: run demo
 
 run:
 	PYTHON=$(PYTHON) AMAP_KEY=$(AMAP_KEY) bash scripts/run_all.sh
@@ -11,6 +11,3 @@ demo:
 		--trips sample/trips.csv \
 		--locations sample/locations.csv \
 		--output outputs/trip-map.html
-
-demo-page:
-	$(PYTHON) scripts/05_build_demo.py

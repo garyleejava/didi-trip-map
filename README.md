@@ -18,14 +18,6 @@
 - URL 保存当前视图状态，可复制链接；支持筛选结果 CSV 导出
 - 默认构建不写入高德 Key，页面不会从 URL 读取 Key
 
-## 在线体验
-
-无需高德 Key、使用仓库示例数据的静态演示页已经放在 GitHub Pages：
-
-https://garyleejava.github.io/didi-trip-map/
-
-完整版包含高德地图、热力图和路线规划，需要在本地配置高德 Key 后生成页面体验。
-
 ## 快速开始
 
 ```bash
@@ -127,14 +119,6 @@ make demo
 
 打开 `outputs/trip-map.html` 即可体验。
 
-也可以直接构建无 Key 的静态演示页：
-
-```bash
-make demo-page
-```
-
-生成结果在 `docs/index.html`，可部署到 GitHub Pages 或任意静态托管。
-
 ## 目录结构
 
 ```text
@@ -142,7 +126,6 @@ data/input/        放滴滴行程单 PDF
 data/screenshots/  放行程截图（可选）
 scripts/           解析、地理编码、纠错、构建脚本
 template/          地图 HTML 模板
-docs/              静态演示页与 GitHub Pages 源文件
 overrides/         人工坐标纠错配置
 sample/            示例数据
 outputs/           生成结果（不提交到 Git）
