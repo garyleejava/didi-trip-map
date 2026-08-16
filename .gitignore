@@ -1,0 +1,16 @@
+.DS_Store
+.env
+__pycache__/
+*.pyc
+scripts/ocr
+
+data/input/*
+!data/input/.gitkeep
+
+data/screenshots/*
+!data/screenshots/.gitkeep
+
+outputs/*
+!outputs/.gitkeep
+
+overrides/user_overrides.py

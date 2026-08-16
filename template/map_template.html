@@ -1,0 +1,971 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>滴滴行程地图</title>
+<style>
+:root {
+  --bg: #f5f7f8;
+  --panel: #ffffff;
+  --line: #dfe5e8;
+  --text: #1f2933;
+  --muted: #697b89;
+  --blue: #1677ff;
+  --green: #13a8a8;
+  --orange: #fa8c16;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+}
+header {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 15px;
+}
+.brand-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--blue);
+  box-shadow: 12px 0 0 -2px var(--orange), -12px 0 0 -2px var(--green);
+}
+.header-meta {
+  color: var(--muted);
+  font-size: 12px;
+}
+main {
+  display: flex;
+  height: calc(100vh - 48px);
+}
+aside {
+  width: 280px;
+  flex: none;
+  overflow: auto;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  padding: 14px;
+}
+section {
+  margin-bottom: 16px;
+}
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.stat {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 8px;
+  background: #fbfcfd;
+}
+.stat b {
+  display: block;
+  font-size: 17px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stat span {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.filters label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.filters select,
+.filters input[type="search"] {
+  display: block;
+  width: 100%;
+  margin-top: 5px;
+  padding: 8px 9px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+}
+.filters select:focus,
+.filters input[type="search"]:focus {
+  border-color: var(--blue);
+}
+.check {
+  display: flex !important;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+}
+.check input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--blue);
+}
+.selection-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  margin-top: 2px;
+  padding: 5px 7px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fbfcfd;
+}
+.selection-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 600;
+}
+.clear-btn {
+  flex: none;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+.clear-btn:hover {
+  color: var(--text);
+  border-color: #b6c2ca;
+}
+.selected-section {
+  margin-bottom: 16px;
+}
+.selected-trips {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 190px;
+  overflow: auto;
+}
+.trip-row {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fbfcfd;
+  padding: 7px 8px;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.trip-row b {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+  font-size: 12px;
+}
+.trip-row .trip-meta {
+  color: var(--muted);
+}
+.legend {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+.legend-dot.start { background: var(--blue); }
+.legend-dot.dest { background: var(--orange); }
+.legend-line {
+  width: 18px;
+  height: 4px;
+  border-radius: 2px;
+  flex: none;
+}
+.legend-line.start { background: var(--blue); }
+.legend-line.dest { background: var(--orange); }
+.summary-title {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  padding: 7px 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fbfcfd;
+  cursor: pointer;
+}
+.summary-row:hover {
+  border-color: var(--blue);
+  background: #f0f7ff;
+}
+.summary-row.selected {
+  border-color: var(--blue);
+  box-shadow: inset 0 0 0 1px var(--blue);
+}
+.summary-row .name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.summary-row .count {
+  flex: none;
+  color: var(--blue);
+  font-size: 13px;
+  font-weight: 600;
+}
+.summary-row .roles {
+  flex: none;
+  color: var(--muted);
+  font-size: 10px;
+}
+#map {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+}
+.marker-dot {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 5px rgba(15, 30, 45, 0.35);
+  cursor: pointer;
+  user-select: none;
+}
+.marker-dot.start { background: var(--blue); }
+.marker-dot.dest { background: var(--orange); }
+.marker-dot.both {
+  background: linear-gradient(135deg, var(--blue) 50%, var(--orange) 50%);
+}
+.marker-dot.selected {
+  box-shadow:
+    0 0 0 5px rgba(22, 119, 255, 0.28),
+    0 2px 10px rgba(15, 30, 45, 0.45);
+  transform: scale(1.12);
+}
+.iw {
+  min-width: 220px;
+  max-width: 320px;
+  padding: 2px 0;
+}
+.iw-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.iw-meta {
+  color: var(--muted);
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+.iw-counts {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.iw-counts span {
+  border-radius: 6px;
+  padding: 3px 7px;
+  font-size: 11px;
+  color: #fff;
+}
+.iw-counts .c-start { background: var(--blue); }
+.iw-counts .c-dest { background: var(--orange); }
+.iw-list {
+  max-height: 180px;
+  overflow: auto;
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
+}
+.iw-item {
+  font-size: 11px;
+  line-height: 1.45;
+  padding: 3px 0;
+  color: var(--muted);
+}
+.key-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(240, 244, 247, 0.94);
+}
+.key-overlay.hidden { display: none; }
+.key-box {
+  width: min(420px, calc(100vw - 32px));
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  padding: 24px;
+  box-shadow: 0 14px 40px rgba(15, 30, 45, 0.12);
+}
+.key-box h1 {
+  margin: 0 0 6px;
+  font-size: 17px;
+}
+.key-box p {
+  margin: 8px 0 14px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.key-box input {
+  width: 100%;
+  padding: 10px 11px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  font-size: 13px;
+  outline: none;
+}
+.key-box input:focus { border-color: var(--blue); }
+.key-box button {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.key-box .error {
+  color: #d4380d;
+  font-size: 12px;
+  min-height: 16px;
+  margin-top: 8px;
+}
+@media (max-width: 720px) {
+  main {
+    flex-direction: column;
+  }
+  aside {
+    width: auto;
+    max-height: 44%;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  #map {
+    width: 100%;
+    height: 56%;
+    flex: 1;
+  }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="brand-dot"></span><strong>滴滴行程地图</strong></div>
+  <div class="header-meta" id="keyState">等待高德地图 Key</div>
+</header>
+<main>
+  <aside>
+    <section class="stats" aria-label="行程统计">
+      <div class="stat"><b id="statTrips">0</b><span>行程</span></div>
+      <div class="stat"><b id="statDistance">0</b><span>公里</span></div>
+      <div class="stat"><b id="statAmount">0</b><span>金额</span></div>
+    </section>
+    <section class="filters" aria-label="筛选条件">
+      <label>城市
+        <select id="cityFilter"></select>
+      </label>
+      <label>年份
+        <select id="yearFilter"></select>
+      </label>
+      <label>来源
+        <select id="sourceFilter"></select>
+      </label>
+      <label>地点
+        <input id="searchInput" type="search" placeholder="搜索地点">
+      </label>
+      <label class="check">
+        <input id="lineToggle" type="checkbox">
+        <span>显示全部连线</span>
+      </label>
+      <div class="selection-bar">
+        <span class="selection-label" id="selectionLabel"></span>
+        <button class="clear-btn" id="clearSelectionBtn" type="button" hidden>清除选中</button>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><span class="legend-dot start"></span>起点</div>
+        <div class="legend-item"><span class="legend-dot dest"></span>终点</div>
+        <div class="legend-item"><span class="legend-line start"></span>出发段</div>
+        <div class="legend-item"><span class="legend-line dest"></span>到达段</div>
+      </div>
+    </section>
+    <section class="selected-section" id="selectedSection" hidden>
+      <h2 class="summary-title">相关行程</h2>
+      <div class="selected-trips" id="selectedTrips"></div>
+    </section>
+    <section>
+      <h2 class="summary-title">高频地点</h2>
+      <div class="summary-list" id="summaryList"></div>
+    </section>
+  </aside>
+  <div id="map"></div>
+</main>
+<div id="keyOverlay" class="key-overlay">
+  <div class="key-box">
+    <h1>配置高德地图 Key</h1>
+    <p>页面需要高德 Web 端 JS API Key 才能加载地图。Key 只会保存在当前浏览器，不会写入文件。</p>
+    <input id="keyInput" type="text" autocomplete="off" placeholder="粘贴高德地图 Key">
+    <button id="keyButton" type="button">加载地图</button>
+    <div class="error" id="keyError"></div>
+  </div>
+</div>
+<script>
+window.__TRIPS__ = null;
+window.__AMAP_KEY__ = "";
+</script>
+<script>
+const trips = window.__TRIPS__ || [];
+let map = null;
+let infoWindow = null;
+let key = window.__AMAP_KEY__ ||
+  localStorage.getItem("amap_key") ||
+  new URLSearchParams(location.search).get("key") ||
+  "";
+let currentCounts = new Map();
+const markerMap = new Map();
+const lines = [];
+let selectedKey = "";
+
+const cityFilter = document.getElementById("cityFilter");
+const yearFilter = document.getElementById("yearFilter");
+const sourceFilter = document.getElementById("sourceFilter");
+const searchInput = document.getElementById("searchInput");
+const lineToggle = document.getElementById("lineToggle");
+const selectionLabel = document.getElementById("selectionLabel");
+const clearSelectionBtn = document.getElementById("clearSelectionBtn");
+const selectedSection = document.getElementById("selectedSection");
+const selectedTripsList = document.getElementById("selectedTrips");
+const keyState = document.getElementById("keyState");
+const keyOverlay = document.getElementById("keyOverlay");
+const keyInput = document.getElementById("keyInput");
+const keyButton = document.getElementById("keyButton");
+const keyError = document.getElementById("keyError");
+
+function esc(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function parseNumber(value) {
+  const n = parseFloat(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function loadMap(apiKey) {
+  key = apiKey;
+  keyOverlay.classList.add("hidden");
+  keyState.textContent = "正在加载地图";
+  const script = document.createElement("script");
+  script.src = "https://webapi.amap.com/maps?v=2.0&key=" + encodeURIComponent(apiKey);
+  script.async = true;
+  script.onload = function () {
+    if (!window.AMap) {
+      showKeyError("地图 SDK 加载失败，请检查 Key。");
+      return;
+    }
+    try {
+      initMap();
+    } catch (err) {
+      showKeyError("地图初始化失败：" + err.message);
+    }
+  };
+  script.onerror = function () {
+    showKeyError("无法连接高德地图服务，请检查网络。");
+  };
+  document.head.appendChild(script);
+}
+
+function showKeyError(message) {
+  keyOverlay.classList.remove("hidden");
+  keyError.textContent = message;
+}
+
+keyButton.addEventListener("click", function () {
+  const value = keyInput.value.trim();
+  if (!value) {
+    keyError.textContent = "请先粘贴 Key。";
+    return;
+  }
+  localStorage.setItem("amap_key", value);
+  keyError.textContent = "";
+  loadMap(value);
+});
+
+function initMap() {
+  map = new AMap.Map("map", {
+    zoom: 5,
+    center: [106, 35],
+    mapStyle: "amap://styles/light",
+    viewMode: "2D"
+  });
+  infoWindow = new AMap.InfoWindow({
+    offset: new AMap.Pixel(0, -76),
+    autoMove: true
+  });
+  buildIndex();
+  populateFilters();
+  bindEvents();
+  const params = new URLSearchParams(location.search);
+  if (params.get("city")) cityFilter.value = params.get("city");
+  if (params.get("year")) yearFilter.value = params.get("year");
+  if (params.get("source")) sourceFilter.value = params.get("source");
+  if (params.get("search")) searchInput.value = params.get("search");
+  if (params.get("lines") === "1") lineToggle.checked = true;
+  applyFilters();
+  const selectedParam = params.get("selected");
+  if (selectedParam && markerMap.has(selectedParam)) selectLocation(selectedParam);
+  keyState.textContent = "已加载 " + trips.length + " 条行程";
+}
+
+function locationKey(city, role, name) {
+  return city + "|" + role + "|" + name;
+}
+
+function addLocation(city, role, place) {
+  if (!place || !place.lat || !place.lng) return;
+  const key = locationKey(city, role, place.name);
+  let item = markerMap.get(key);
+  if (!item) {
+    item = {
+      key: key,
+      city: city,
+      name: place.name,
+      lat: place.lat,
+      lng: place.lng,
+      matchedName: place.matched_name || "",
+      address: place.address || "",
+      marker: null,
+      tripIds: []
+    };
+    markerMap.set(key, item);
+  }
+}
+
+function buildIndex() {
+  trips.forEach(function (trip, index) {
+    trip.id = index;
+    trip.pickupYear = trip.pickup ? trip.pickup.slice(0, 4) : "";
+    addLocation(trip.cityNorm, "起点", trip.o);
+    addLocation(trip.cityNorm, "终点", trip.d);
+    if (trip.o && trip.o.lat && trip.o.lng) {
+      const k = locationKey(trip.cityNorm, "起点", trip.o.name);
+      markerMap.get(k).tripIds.push(index);
+    }
+    if (trip.d && trip.d.lat && trip.d.lng) {
+      const k = locationKey(trip.cityNorm, "终点", trip.d.name);
+      markerMap.get(k).tripIds.push(index);
+    }
+  });
+
+  markerMap.forEach(function (item) {
+    const marker = new AMap.Marker({
+      position: [item.lng, item.lat],
+      content: "",
+      offset: new AMap.Pixel(-17, -17),
+      zIndex: 130,
+      title: item.name
+    });
+    marker.on("click", function () {
+      selectLocation(item.key);
+    });
+    item.marker = marker;
+    marker.setMap(null);
+  });
+
+  trips.forEach(function (trip) {
+    if (!trip.o || !trip.d) return;
+    const start = [trip.o.lng, trip.o.lat];
+    const end = [trip.d.lng, trip.d.lat];
+    const mid = [
+      start[0] + (end[0] - start[0]) * 0.68,
+      start[1] + (end[1] - start[1]) * 0.68
+    ];
+    const startLine = new AMap.Polyline({
+      path: [start, mid],
+      strokeColor: "#1677ff",
+      strokeWeight: 3,
+      strokeOpacity: 0.45,
+      strokeStyle: "solid",
+      lineJoin: "round",
+      zIndex: 50
+    });
+    const endLine = new AMap.Polyline({
+      path: [mid, end],
+      strokeColor: "#fa8c16",
+      strokeWeight: 6,
+      strokeOpacity: 0.72,
+      strokeStyle: "solid",
+      lineJoin: "round",
+      showDir: true,
+      dirColor: "#ffffff",
+      zIndex: 51
+    });
+    startLine.setMap(null);
+    endLine.setMap(null);
+    lines.push({ trip: trip, line: startLine, endLine: endLine });
+  });
+}
+
+function markerContent(item, startCount, destCount, selected) {
+  const total = startCount + destCount;
+  if (total <= 0) return "";
+  const cls = startCount > 0 && destCount > 0 ? "both" : (destCount > 0 ? "dest" : "start");
+  const sel = selected ? " selected" : "";
+  return '<div class="marker-dot ' + cls + sel + '">' + total + "</div>";
+}
+
+function matchesFilters(trip) {
+  if (cityFilter.value !== "all" && trip.cityNorm !== cityFilter.value) return false;
+  if (yearFilter.value !== "all" && trip.pickupYear !== yearFilter.value) return false;
+  if (sourceFilter.value !== "all" && trip.source !== sourceFilter.value) return false;
+  const q = searchInput.value.trim().toLowerCase();
+  if (q) {
+    const haystack = [
+      trip.origin,
+      trip.dest,
+      trip.o ? trip.o.matched_name : "",
+      trip.d ? trip.d.matched_name : ""
+    ].join(" ").toLowerCase();
+    if (haystack.indexOf(q) === -1) return false;
+  }
+  return true;
+}
+
+function tripUsesLocation(trip, key) {
+  if (!key || !trip) return false;
+  if (trip.o && locationKey(trip.cityNorm, "起点", trip.o.name) === key) return true;
+  if (trip.d && locationKey(trip.cityNorm, "终点", trip.d.name) === key) return true;
+  return false;
+}
+
+function clearSelection() {
+  selectedKey = "";
+  selectionLabel.textContent = "";
+  clearSelectionBtn.hidden = true;
+  selectedSection.hidden = true;
+  if (infoWindow) infoWindow.close();
+  applyFilters();
+}
+
+function selectLocation(key) {
+  if (!markerMap.has(key)) return;
+  if (selectedKey === key) {
+    clearSelection();
+    return;
+  }
+  selectedKey = key;
+  applyFilters();
+  const item = markerMap.get(selectedKey);
+  if (item) {
+    selectionLabel.textContent = item.name;
+    clearSelectionBtn.hidden = false;
+  }
+}
+
+function applyFilters() {
+  const visibleTrips = trips.filter(matchesFilters);
+  const visibleSet = new Set(visibleTrips.map(function (t) { return t.id; }));
+  const counts = new Map();
+
+  visibleTrips.forEach(function (trip) {
+    if (trip.o && trip.o.lat && trip.o.lng) {
+      const k = locationKey(trip.cityNorm, "起点", trip.o.name);
+      const c = counts.get(k) || { start: 0, dest: 0 };
+      c.start += 1;
+      counts.set(k, c);
+    }
+    if (trip.d && trip.d.lat && trip.d.lng) {
+      const k = locationKey(trip.cityNorm, "终点", trip.d.name);
+      const c = counts.get(k) || { start: 0, dest: 0 };
+      c.dest += 1;
+      counts.set(k, c);
+    }
+  });
+  currentCounts = counts;
+
+  if (selectedKey && !counts.has(selectedKey)) {
+    selectedKey = "";
+    selectionLabel.textContent = "";
+    clearSelectionBtn.hidden = true;
+    selectedSection.hidden = true;
+  }
+
+  const selectedTrips = selectedKey
+    ? visibleTrips.filter(function (t) { return tripUsesLocation(t, selectedKey); })
+    : [];
+  const selectedTripSet = new Set(selectedTrips.map(function (t) { return t.id; }));
+  const relatedKeys = new Set();
+  if (selectedKey) {
+    relatedKeys.add(selectedKey);
+    selectedTrips.forEach(function (t) {
+      if (t.o) relatedKeys.add(locationKey(t.cityNorm, "起点", t.o.name));
+      if (t.d) relatedKeys.add(locationKey(t.cityNorm, "终点", t.d.name));
+    });
+  }
+
+  const visibleMarkers = [];
+  markerMap.forEach(function (item) {
+    const c = counts.get(item.key) || { start: 0, dest: 0 };
+    const isRelated = !selectedKey || relatedKeys.has(item.key);
+    item.marker.setContent(markerContent(item, c.start, c.dest, item.key === selectedKey));
+    item.marker.setzIndex(item.key === selectedKey ? 160 : 130);
+    if (c.start + c.dest > 0 && isRelated) {
+      item.marker.setMap(map);
+      visibleMarkers.push(item.marker);
+    } else {
+      item.marker.setMap(null);
+    }
+  });
+
+  lines.forEach(function (entry) {
+    const showSelected = selectedKey && selectedTripSet.has(entry.trip.id);
+    const showAll = !selectedKey && lineToggle.checked && visibleSet.has(entry.trip.id);
+    if (showSelected) {
+      entry.line.setOptions({ strokeOpacity: 0.95, strokeWeight: 5, zIndex: 80 });
+      entry.endLine.setOptions({ strokeOpacity: 0.95, strokeWeight: 7, zIndex: 81 });
+    } else {
+      entry.line.setOptions({ strokeOpacity: 0.45, strokeWeight: 3, zIndex: 50 });
+      entry.endLine.setOptions({ strokeOpacity: 0.72, strokeWeight: 6, zIndex: 51 });
+    }
+    if (showSelected || showAll) {
+      entry.line.setMap(map);
+      entry.endLine.setMap(map);
+    } else {
+      entry.line.setMap(null);
+      entry.endLine.setMap(null);
+    }
+  });
+
+  updateStats(visibleTrips);
+  updateSelectedTrips(selectedTrips);
+  updateSummary(visibleTrips, counts);
+  if (selectedKey) {
+    fitSelected(selectedTrips);
+  } else {
+    fitMap(visibleMarkers);
+  }
+}
+
+function fitMap(overlays) {
+  if (!map) return;
+  if (overlays.length) {
+    map.setFitView(overlays, false, [60, 60, 60, 60], 16);
+  } else {
+    map.setZoomAndCenter(5, [106, 35]);
+  }
+}
+
+function fitSelected(selectedTrips) {
+  if (!map) return;
+  const overlays = [];
+  selectedTrips.forEach(function (trip) {
+    if (trip.o && trip.o.lat && trip.o.lng) {
+      const key = locationKey(trip.cityNorm, "起点", trip.o.name);
+      const item = markerMap.get(key);
+      if (item && overlays.indexOf(item.marker) === -1) overlays.push(item.marker);
+    }
+    if (trip.d && trip.d.lat && trip.d.lng) {
+      const key = locationKey(trip.cityNorm, "终点", trip.d.name);
+      const item = markerMap.get(key);
+      if (item && overlays.indexOf(item.marker) === -1) overlays.push(item.marker);
+    }
+  });
+  if (overlays.length) {
+    map.setFitView(overlays, false, [80, 80, 80, 80], 16);
+  } else {
+    map.setZoomAndCenter(5, [106, 35]);
+  }
+}
+
+function updateStats(visibleTrips) {
+  let distance = 0;
+  let amount = 0;
+  visibleTrips.forEach(function (t) {
+    distance += parseNumber(t.distance);
+    amount += parseNumber(t.amount);
+  });
+  document.getElementById("statTrips").textContent = visibleTrips.length;
+  document.getElementById("statDistance").textContent = Math.round(distance).toLocaleString();
+  document.getElementById("statAmount").textContent = "¥" + Math.round(amount).toLocaleString();
+}
+
+function updateSelectedTrips(selectedTrips) {
+  if (!selectedKey) {
+    selectedSection.hidden = true;
+    selectedTripsList.innerHTML = "";
+    return;
+  }
+  selectedSection.hidden = false;
+  selectedTripsList.innerHTML = selectedTrips.slice(0, 8).map(function (t) {
+    const title = (t.pickup ? t.pickup.slice(0, 16) : "时间缺失") + " · " + t.origin + " → " + t.dest;
+    const meta = (t.amount ? "¥" + t.amount : "金额缺失") + (t.car ? " · " + t.car : "");
+    return '<div class="trip-row"><b title="' + esc(title) + '">' + esc(title) + "</b>" +
+      '<div class="trip-meta">' + esc(meta) + "</div></div>";
+  }).join("") || '<div class="trip-row"><b>无匹配行程</b></div>';
+}
+
+function updateSummary(visibleTrips, counts) {
+  const entries = [];
+  markerMap.forEach(function (item) {
+    const c = counts.get(item.key);
+    if (c && c.start + c.dest > 0) {
+      entries.push({
+        key: item.key,
+        name: item.name,
+        city: item.city,
+        total: c.start + c.dest,
+        start: c.start,
+        dest: c.dest
+      });
+    }
+  });
+  entries.sort(function (a, b) { return b.total - a.total; });
+  const list = document.getElementById("summaryList");
+  list.innerHTML = entries.slice(0, 8).map(function (e) {
+    const selected = e.key === selectedKey ? " selected" : "";
+    return '<div class="summary-row' + selected + '" data-key="' + esc(e.key) + '"><span class="name" title="' + esc(e.name) + '">' +
+      esc(e.name) + "</span><span class=\"roles\">起 " + e.start + " · 终 " + e.dest +
+      '</span><span class="count">' + e.total + "</span></div>";
+  }).join("") || '<div class="summary-row"><span class="name">无匹配地点</span></div>';
+}
+
+function openInfo(item) {
+  if (!map || !infoWindow) return;
+  const c = currentCounts.get(item.key) || { start: 0, dest: 0 };
+  const samples = item.tripIds.map(function (id) { return trips[id]; }).filter(function (t) {
+    return matchesFilters(t);
+  }).slice(0, 6);
+  const rows = samples.map(function (t) {
+    return '<div class="iw-item">' + esc(t.pickup ? t.pickup.slice(0, 16) : "时间缺失") +
+      " · " + esc(t.origin) + " → " + esc(t.dest) +
+      (t.amount ? " · ¥" + esc(t.amount) : "") + "</div>";
+  }).join("");
+  const matched = item.matchedName || item.name;
+  const address = item.address ? " · " + item.address : "";
+  infoWindow.setContent(
+    '<div class="iw"><div class="iw-title">' + esc(item.name) + "</div>" +
+    '<div class="iw-meta">' + esc(item.city) + " · " + esc(matched) + esc(address) + "</div>" +
+    '<div class="iw-counts"><span class="c-start">起点 ' + c.start + '</span><span class="c-dest">终点 ' + c.dest + "</span></div>" +
+    '<div class="iw-list">' + rows + "</div></div>"
+  );
+  infoWindow.open(map, [item.lng, item.lat]);
+}
+
+function populateFilters() {
+  const cityCounts = {};
+  const yearCounts = {};
+  const sourceCounts = {};
+  trips.forEach(function (t) {
+    cityCounts[t.cityNorm] = (cityCounts[t.cityNorm] || 0) + 1;
+    yearCounts[t.pickupYear || "未知"] = (yearCounts[t.pickupYear || "未知"] || 0) + 1;
+    sourceCounts[t.source] = (sourceCounts[t.source] || 0) + 1;
+  });
+
+  let html = '<option value="all">全部（' + trips.length + "）</option>";
+  Object.keys(cityCounts).sort().forEach(function (city) {
+    html += '<option value="' + esc(city) + '">' + esc(city) + "（" + cityCounts[city] + "）</option>";
+  });
+  cityFilter.innerHTML = html;
+
+  html = '<option value="all">全部年份</option>';
+  Object.keys(yearCounts).sort().forEach(function (year) {
+    html += '<option value="' + esc(year) + '">' + esc(year) + "（" + yearCounts[year] + "）</option>";
+  });
+  yearFilter.innerHTML = html;
+
+  html = '<option value="all">全部来源</option>';
+  Object.keys(sourceCounts).forEach(function (source) {
+    html += '<option value="' + esc(source) + '">' + esc(source) + "（" + sourceCounts[source] + "）</option>";
+  });
+  sourceFilter.innerHTML = html;
+}
+
+function bindEvents() {
+  cityFilter.addEventListener("change", applyFilters);
+  yearFilter.addEventListener("change", applyFilters);
+  sourceFilter.addEventListener("change", applyFilters);
+  searchInput.addEventListener("input", applyFilters);
+  lineToggle.addEventListener("change", applyFilters);
+  clearSelectionBtn.addEventListener("click", clearSelection);
+  document.getElementById("summaryList").addEventListener("click", function (event) {
+    const row = event.target.closest(".summary-row");
+    if (row && row.dataset.key) selectLocation(row.dataset.key);
+  });
+  window.addEventListener("resize", function () {
+    if (map) map.resize();
+  });
+}
+
+if (key) {
+  loadMap(key);
+} else {
+  keyOverlay.classList.remove("hidden");
+}
+</script>
+</body>
+</html>
