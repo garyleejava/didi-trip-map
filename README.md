@@ -12,6 +12,12 @@
 - 输出独立 HTML 地图，支持城市、年份、来源筛选
 - 点击起点/终点标记只显示相关行程线，并自动缩放
 
+## 在线体验
+
+不需要 API Key 的 Leaflet 静态示例页已经放在 GitHub Pages：
+
+https://garyleejava.github.io/didi-trip-map/
+
 ## 快速开始
 
 ```bash
@@ -86,6 +92,14 @@ make demo
 
 打开 `outputs/trip-map.html` 即可体验。
 
+也可以直接构建无 Key 的静态演示页：
+
+```bash
+make demo-page
+```
+
+生成结果在 `docs/index.html`，可部署到 GitHub Pages 或任意静态托管。
+
 ## 目录结构
 
 ```text
@@ -93,6 +107,7 @@ data/input/        放滴滴行程单 PDF
 data/screenshots/  放行程截图（可选）
 scripts/           解析、地理编码、纠错、构建脚本
 template/          地图 HTML 模板
+docs/              静态演示页与 GitHub Pages 源文件
 overrides/         人工坐标纠错配置
 sample/            示例数据
 outputs/           生成结果（不提交到 Git）
