@@ -64,6 +64,26 @@ def as_number(value):
         return None
 
 
+def parse_datetime(value):
+    """Return year, month, day, and ISO date from a common CSV datetime string."""
+    text = (value or "").strip()
+    if not text:
+        return "", "", "", ""
+    try:
+        dt = __import__("datetime").datetime.strptime(text[:19], "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        try:
+            dt = __import__("datetime").datetime.strptime(text[:16], "%Y-%m-%d %H:%M")
+        except ValueError:
+            return "", "", "", ""
+    return (
+        str(dt.year),
+        f"{dt.month:02d}",
+        f"{dt.day:02d}",
+        f"{dt.year:04d}-{dt.month:02d}-{dt.day:02d}",
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Build a standalone Didi trip map HTML file."
@@ -73,6 +93,7 @@ def main():
     parser.add_argument("--template", type=pathlib.Path, default=DEFAULT_TEMPLATE)
     parser.add_argument("--output", type=pathlib.Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--key", default="")
+    parser.add_argument("--security-code", default="")
     args = parser.parse_args()
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -109,6 +130,21 @@ def main():
 
         o = place(city_norm, "起点", origin)
         d = place(city_norm, "终点", dest)
+        year, month, day, date = parse_datetime(row.get("上车时间"))
+        od_key = (
+            f"{city_norm}|{o['name'] if o else origin}|{d['name'] if d else dest}"
+            if o and d
+            else ""
+        )
+        quality = (
+            "ok"
+            if o and d
+            else "missing_origin"
+            if not o and d
+            else "missing_dest"
+            if o and not d
+            else "missing_both"
+        )
         if o:
             located += 1
         if not o and origin:
@@ -128,15 +164,22 @@ def main():
                 "carCat": (row.get("车型类别") or "").strip(),
                 "pickup": (row.get("上车时间") or "").strip(),
                 "arrival": (row.get("到达时间") or "").strip(),
+                "pickupYear": year,
+                "pickupMonth": f"{year}-{month}" if year else "",
+                "pickupDate": date,
                 "city": city,
                 "cityNorm": city_norm,
                 "origin": origin,
                 "dest": dest,
                 "distance": as_number(row.get("里程_公里")),
+                "distanceNum": as_number(row.get("里程_公里")),
                 "amount": as_number(row.get("金额_元")),
+                "amountNum": as_number(row.get("金额_元")),
                 "note": (row.get("备注") or "").strip(),
                 "o": o,
                 "d": d,
+                "odKey": od_key,
+                "dataQuality": quality,
             }
         )
 
@@ -145,6 +188,9 @@ def main():
     js_string = json.dumps(payload, ensure_ascii=False)
 
     api_key = (args.key or os.environ.get("AMAP_KEY") or "").strip()
+    security_code = (
+        args.security_code or os.environ.get("AMAP_SECURITY_JS_CODE") or ""
+    ).strip()
     with open(args.template, encoding="utf-8") as f:
         template = f.read()
     html = template.replace(
@@ -155,6 +201,11 @@ def main():
     html = html.replace(
         'window.__AMAP_KEY__ = "";',
         "window.__AMAP_KEY__ = " + js_key + ";",
+    )
+    js_security_code = json.dumps(security_code, ensure_ascii=False)
+    html = html.replace(
+        'window.__AMAP_SECURITY_JS_CODE__ = "";',
+        "window.__AMAP_SECURITY_JS_CODE__ = " + js_security_code + ";",
     )
     with open(args.output, "w", encoding="utf-8") as f:
         f.write(html)

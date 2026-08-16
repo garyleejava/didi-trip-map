@@ -9,14 +9,22 @@
 - 使用高德 POI 搜索和地理编码批量定位起终点
 - 支持人工坐标纠错，修复高德误匹配
 - 输出可直接分析的 `trips.csv` / `trips.xlsx`
-- 输出独立 HTML 地图，支持城市、年份、来源筛选
-- 点击起点/终点标记只显示相关行程线，并自动缩放
+- 输出独立 HTML 地图，支持城市、年份、月份、来源、日期范围和地点搜索
+- 三标签分析面板：概览趋势、可排序行程表、地点明细
+- 高德 MarkerCluster 地点聚合、热力图、聚合 OD 连线三种地图视图
+- 选中单条行程按需调用高德参考路线，失败时保留示意连线并提示
+- 月度趋势和城市分布图表，点击图表可直接下钻筛选
+- 移动端地图全屏 + 可展开底部抽屉
+- URL 保存当前视图状态，可复制链接；支持筛选结果 CSV 导出
+- 默认构建不写入高德 Key，页面不会从 URL 读取 Key
 
 ## 在线体验
 
-不需要 API Key 的 Leaflet 静态示例页已经放在 GitHub Pages：
+无需高德 Key、使用仓库示例数据的静态演示页已经放在 GitHub Pages：
 
 https://garyleejava.github.io/didi-trip-map/
+
+完整版包含高德地图、热力图和路线规划，需要在本地配置高德 Key 后生成页面体验。
 
 ## 快速开始
 
@@ -39,6 +47,33 @@ make run
 
 ```bash
 bash scripts/run_all.sh
+```
+
+直接用已有 CSV 构建（默认不嵌入 Key）：
+
+```bash
+python3 scripts/04_build_map.py \
+  --trips outputs/trips.csv \
+  --locations outputs/locations.csv \
+  --output outputs/trip-map.html
+```
+
+本地预览时再注入 Key，最终分享使用空 Key 版本：
+
+```bash
+AMAP_KEY=你的高德Key python3 scripts/04_build_map.py \
+  --trips outputs/trips.csv \
+  --locations outputs/locations.csv \
+  --output outputs/trip-map.html
+```
+
+如果高德账号配置了 `securityJsCode`，可同时传入：
+
+```bash
+AMAP_SECURITY_JS_CODE=你的安全密钥 python3 scripts/04_build_map.py \
+  --trips outputs/trips.csv \
+  --locations outputs/locations.csv \
+  --output outputs/trip-map.html
 ```
 
 生成结果：

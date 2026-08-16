@@ -2,18 +2,28 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<base href="https://webapi.amap.com/">
 <title>滴滴行程地图</title>
 <style>
 :root {
-  --bg: #f5f7f8;
-  --panel: #ffffff;
-  --line: #dfe5e8;
-  --text: #1f2933;
-  --muted: #697b89;
-  --blue: #1677ff;
-  --green: #13a8a8;
-  --orange: #fa8c16;
+  --bg: #eef1f4;
+  --surface: #ffffff;
+  --surface-2: #f7f9fb;
+  --line: #d9e1e7;
+  --line-strong: #b9c6d0;
+  --text: #17242e;
+  --muted: #64748b;
+  --accent: #2563eb;
+  --accent-soft: #eaf1ff;
+  --dest: #d97706;
+  --dest-soft: #fff3e0;
+  --teal: #0f766e;
+  --teal-soft: #e5f6f3;
+  --danger: #dc2626;
+  --danger-soft: #feecec;
+  --shadow: 0 10px 30px rgba(23, 42, 58, .12);
+  --radius: 8px;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
@@ -22,950 +32,2623 @@ body {
   background: var(--bg);
   color: var(--text);
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select {
+  font: inherit;
+  color: inherit;
+}
+button {
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.icon-btn, .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: border-color .12s ease, background .12s ease, color .12s ease;
+}
+.btn:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+}
+.btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.btn.primary:hover {
+  background: #1d4ed8;
+}
+.btn.danger-ghost {
+  color: var(--danger);
+  border-color: #f0c7c7;
+}
+.btn.danger-ghost:hover {
+  background: var(--danger-soft);
+}
+.icon-btn {
+  width: 34px;
+  padding: 0;
+  font-size: 16px;
+}
+.muted { color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; }
+.ellipsis {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 header {
-  height: 48px;
+  height: 52px;
+  flex: none;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-  background: var(--panel);
+  gap: 12px;
+  padding: 0 14px;
+  background: var(--surface);
   border-bottom: 1px solid var(--line);
+  z-index: 1300;
 }
 .brand {
   display: flex;
   align-items: center;
   gap: 9px;
+  min-width: 0;
   font-size: 15px;
 }
-.brand-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--blue);
-  box-shadow: 12px 0 0 -2px var(--orange), -12px 0 0 -2px var(--green);
-}
-.header-meta {
-  color: var(--muted);
-  font-size: 12px;
-}
-main {
-  display: flex;
-  height: calc(100vh - 48px);
-}
-aside {
-  width: 280px;
+.brand-mark {
+  width: 24px;
+  height: 24px;
   flex: none;
-  overflow: auto;
-  background: var(--panel);
-  border-right: 1px solid var(--line);
-  padding: 14px;
+  border-radius: 7px;
+  background:
+    linear-gradient(135deg, var(--accent) 0 44%, transparent 44% 100%),
+    linear-gradient(315deg, var(--dest) 0 44%, transparent 44% 100%),
+    var(--teal);
 }
-section {
-  margin-bottom: 16px;
-}
-.stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-.stat {
-  min-width: 0;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 9px 8px;
-  background: #fbfcfd;
-}
-.stat b {
-  display: block;
-  font-size: 17px;
-  line-height: 1.2;
-  white-space: nowrap;
+.brand strong {
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.stat span {
+.header-meta {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.side-panel {
+  width: 344px;
+  flex: none;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  z-index: 1200;
+}
+.sheet-handle {
+  display: none;
+}
+.sheet-mini {
+  display: none;
+}
+.tabs {
+  flex: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.tab-btn {
+  min-height: 34px;
+  border-radius: 7px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.tab-btn:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.tab-btn[aria-selected="true"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.aside-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.tab-panel {
+  display: none;
+  padding: 12px;
+}
+.tab-panel.active {
+  display: block;
+}
+.panel-section {
+  margin-bottom: 16px;
+}
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.section-title .count {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.stat-cell {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  padding: 9px 10px;
+}
+.stat-cell b {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 18px;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+.stat-cell span {
   display: block;
   margin-top: 3px;
   color: var(--muted);
   font-size: 11px;
 }
-.filters label {
-  display: block;
-  margin-bottom: 10px;
-  color: var(--muted);
-  font-size: 12px;
+.stat-cell.wide {
+  grid-column: span 2;
 }
-.filters select,
-.filters input[type="search"] {
-  display: block;
+.chart-box {
   width: 100%;
-  margin-top: 5px;
-  padding: 8px 9px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: #fff;
-  color: var(--text);
-  font-size: 13px;
-  outline: none;
+  height: 160px;
 }
-.filters select:focus,
-.filters input[type="search"]:focus {
-  border-color: var(--blue);
+.chart-box.city-chart {
+  height: 150px;
 }
-.check {
-  display: flex !important;
-  align-items: center;
-  gap: 7px;
-  cursor: pointer;
-}
-.check input {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--blue);
-}
-.selection-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 30px;
-  margin-top: 2px;
-  padding: 5px 7px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: #fbfcfd;
-}
-.selection-label {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--blue);
-  font-size: 12px;
-  font-weight: 600;
-}
-.clear-btn {
-  flex: none;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #fff;
-  color: var(--muted);
-  font-size: 12px;
-  padding: 4px 8px;
-  cursor: pointer;
-}
-.clear-btn:hover {
-  color: var(--text);
-  border-color: #b6c2ca;
-}
-.selected-section {
-  margin-bottom: 16px;
-}
-.selected-trips {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-height: 190px;
-  overflow: auto;
-}
-.trip-row {
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: #fbfcfd;
-  padding: 7px 8px;
-  font-size: 11px;
-  line-height: 1.5;
-}
-.trip-row b {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--text);
-  font-size: 12px;
-}
-.trip-row .trip-meta {
-  color: var(--muted);
-}
-.legend {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--line);
-}
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--muted);
-  font-size: 11px;
-}
-.legend-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex: none;
-}
-.legend-dot.start { background: var(--blue); }
-.legend-dot.dest { background: var(--orange); }
-.legend-line {
-  width: 18px;
-  height: 4px;
-  border-radius: 2px;
-  flex: none;
-}
-.legend-line.start { background: var(--blue); }
-.legend-line.dest { background: var(--orange); }
-.summary-title {
-  margin: 0 0 8px;
-  color: var(--muted);
-  font-size: 12px;
-}
-.summary-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.summary-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 8px;
-  padding: 7px 8px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: #fbfcfd;
-  cursor: pointer;
-}
-.summary-row:hover {
-  border-color: var(--blue);
-  background: #f0f7ff;
-}
-.summary-row.selected {
-  border-color: var(--blue);
-  box-shadow: inset 0 0 0 1px var(--blue);
-}
-.summary-row .name {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 12px;
-}
-.summary-row .count {
-  flex: none;
-  color: var(--blue);
-  font-size: 13px;
-  font-weight: 600;
-}
-.summary-row .roles {
-  flex: none;
-  color: var(--muted);
-  font-size: 10px;
-}
-#map {
-  flex: 1;
-  min-width: 0;
+.chart-empty {
   height: 100%;
-}
-.marker-dot {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--muted);
   font-size: 12px;
-  font-weight: 700;
-  border: 2px solid #fff;
-  box-shadow: 0 1px 5px rgba(15, 30, 45, 0.35);
-  cursor: pointer;
-  user-select: none;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
 }
-.marker-dot.start { background: var(--blue); }
-.marker-dot.dest { background: var(--orange); }
-.marker-dot.both {
-  background: linear-gradient(135deg, var(--blue) 50%, var(--orange) 50%);
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
-.marker-dot.selected {
-  box-shadow:
-    0 0 0 5px rgba(22, 119, 255, 0.28),
-    0 2px 10px rgba(15, 30, 45, 0.45);
-  transform: scale(1.12);
+.list-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  text-align: left;
 }
-.iw {
-  min-width: 220px;
-  max-width: 320px;
-  padding: 2px 0;
+.list-row:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
-.iw-title {
-  font-size: 14px;
-  font-weight: 700;
-  margin-bottom: 4px;
+.list-row.selected {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  background: var(--accent-soft);
 }
-.iw-meta {
+.list-row .name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
+}
+.list-row .sub {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--muted);
   font-size: 11px;
-  margin-bottom: 8px;
 }
-.iw-counts {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-.iw-counts span {
-  border-radius: 6px;
-  padding: 3px 7px;
+.list-row .badge {
+  flex: none;
+  min-width: 26px;
+  text-align: center;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
   font-size: 11px;
-  color: #fff;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
-.iw-counts .c-start { background: var(--blue); }
-.iw-counts .c-dest { background: var(--orange); }
-.iw-list {
-  max-height: 180px;
+.list-row .badge.dest {
+  background: var(--dest-soft);
+  color: var(--dest);
+}
+.list-row .badge.teal {
+  background: var(--teal-soft);
+  color: var(--teal);
+}
+.detail-block {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  padding: 10px;
+}
+.detail-block h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  line-height: 1.35;
+}
+.detail-block .meta {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+  word-break: break-all;
+}
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.detail-cell {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  padding: 7px;
+  text-align: center;
+}
+.detail-cell b {
+  display: block;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.detail-cell span {
+  color: var(--muted);
+  font-size: 10px;
+}
+.route-detail {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+.status-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  margin-top: 8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+}
+.status-line.warn {
+  color: var(--dest);
+  border-color: #f0d6b0;
+  background: var(--dest-soft);
+}
+.status-line.error {
+  color: var(--danger);
+  border-color: #f0c7c7;
+  background: var(--danger-soft);
+}
+.status-line.ok {
+  color: var(--teal);
+  border-color: #b9ddd8;
+  background: var(--teal-soft);
+}
+
+.table-wrap {
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.trip-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  min-width: 660px;
+}
+.trip-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-weight: 700;
+  text-align: left;
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.trip-table th.sortable {
+  cursor: pointer;
+}
+.trip-table th.sortable:hover {
+  color: var(--accent);
+}
+.trip-table th .arrow {
+  margin-left: 3px;
+  color: var(--accent);
+}
+.trip-table td {
+  padding: 7px 8px;
+  border-bottom: 1px solid #edf1f4;
+  vertical-align: top;
+  white-space: nowrap;
+}
+.trip-table tbody tr {
+  cursor: pointer;
+}
+.trip-table tbody tr:hover {
+  background: var(--accent-soft);
+}
+.trip-table tbody tr.selected {
+  background: var(--accent-soft);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.trip-table tbody tr.missing {
+  background: #fffaf5;
+}
+.trip-table tbody tr.missing:hover {
+  background: #fff4e7;
+}
+.route-cell {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.route-cell .small {
+  color: var(--muted);
+  font-size: 10px;
+}
+.tag {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 10px;
+}
+.tag.warn {
+  background: var(--dest-soft);
+  border-color: #f0d6b0;
+  color: var(--dest);
+}
+.tag.teal {
+  background: var(--teal-soft);
+  border-color: #b9ddd8;
+  color: var(--teal);
+}
+
+.map-shell {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  background: #dfe7ec;
+}
+#map {
+  position: absolute;
+  inset: 0;
+}
+.map-toolbar {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  z-index: 1100;
+  background: rgba(255, 255, 255, .96);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 22px rgba(23, 42, 58, .1);
+  padding: 8px;
+}
+.toolbar-main {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.search-wrap {
+  position: relative;
+  flex: 1 1 190px;
+  min-width: 150px;
+}
+.search-wrap input {
+  width: 100%;
+  height: 34px;
+  padding: 0 32px 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  font-size: 13px;
+  outline: none;
+}
+.search-wrap input:focus {
+  border-color: var(--accent);
+}
+.search-icon {
+  position: absolute;
+  top: 8px;
+  right: 9px;
+  width: 18px;
+  height: 18px;
+  color: var(--muted);
+  pointer-events: none;
+}
+.toolbar-select {
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  font-size: 12px;
+  outline: none;
+}
+.toolbar-select:focus {
+  border-color: var(--accent);
+}
+.filter-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 7px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.filter-field {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+.filter-field label {
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.filter-field select,
+.filter-field input[type="date"] {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 7px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  font-size: 12px;
+  outline: none;
+}
+.view-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface-2);
+  padding: 2px;
+  overflow: hidden;
+}
+.segmented button {
+  min-width: 52px;
+  min-height: 28px;
+  padding: 3px 9px;
+  border-radius: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.segmented button:hover {
+  color: var(--text);
+}
+.segmented button.active {
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: 0 1px 3px rgba(23, 42, 58, .12);
+}
+.toolbar-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.filter-toggle {
+  display: none;
+}
+.map-legend {
+  position: absolute;
+  left: 12px;
+  bottom: 34px;
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100% - 24px);
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, .94);
+  color: var(--muted);
+  font-size: 11px;
+  box-shadow: 0 4px 16px rgba(23, 42, 58, .08);
+}
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.legend-dot {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border-radius: 50%;
+}
+.legend-dot.start { background: var(--accent); }
+.legend-dot.dest { background: var(--dest); }
+.legend-dot.both { background: var(--teal); }
+.legend-line {
+  width: 18px;
+  height: 4px;
+  flex: none;
+  border-radius: 2px;
+}
+.legend-line.route { background: linear-gradient(90deg, var(--accent), var(--teal)); }
+.legend-line.selected { background: var(--dest); }
+.route-status {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  z-index: 1060;
+  max-width: min(480px, calc(100vw - 24px));
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .96);
+  color: var(--muted);
+  font-size: 11px;
+  box-shadow: 0 4px 16px rgba(23, 42, 58, .1);
+  overflow: hidden;
+}
+.route-status .label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.route-status.ok { border-color: #b9ddd8; color: var(--teal); }
+.route-status.warn { border-color: #f0d6b0; color: var(--dest); }
+.route-status.error { border-color: #f0c7c7; color: var(--danger); }
+.route-status button {
+  flex: none;
+  margin-left: 2px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.cluster-marker,
+.place-marker {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 3px 10px rgba(23, 42, 58, .3);
+  cursor: pointer;
+  user-select: none;
+  text-shadow: 0 1px 2px rgba(23, 42, 58, .35);
+}
+.cluster-marker {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  border-radius: 50%;
+}
+.place-marker.start {
+  background: var(--accent);
+}
+.place-marker.dest {
+  background: var(--dest);
+}
+.place-marker.both {
+  background: linear-gradient(135deg, var(--accent) 0 50%, var(--dest) 50% 100%);
+}
+.place-marker.selected {
+  box-shadow:
+    0 0 0 5px rgba(37, 99, 235, .25),
+    0 4px 14px rgba(23, 42, 58, .38);
+  transform: scale(1.16);
+}
+.amap-info-content {
+  padding: 4px;
+  border-radius: var(--radius);
+}
+.info-title {
+  font-size: 14px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+.info-meta {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+  margin-bottom: 8px;
+  word-break: break-all;
+}
+.info-counts {
+  display: flex;
+  gap: 7px;
+  margin-bottom: 8px;
+}
+.info-counts span {
+  padding: 3px 7px;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+.info-counts .start { background: var(--accent); }
+.info-counts .dest { background: var(--dest); }
+.info-counts .total { background: var(--teal); }
+.info-list {
+  max-height: 170px;
   overflow: auto;
   border-top: 1px solid var(--line);
   padding-top: 6px;
 }
-.iw-item {
+.info-item {
+  padding: 4px 0;
+  color: var(--muted);
   font-size: 11px;
   line-height: 1.45;
-  padding: 3px 0;
-  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
+
 .key-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: 2000;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(240, 244, 247, 0.94);
+  padding: 20px;
+  background: rgba(238, 241, 244, .96);
 }
 .key-overlay.hidden { display: none; }
 .key-box {
-  width: min(420px, calc(100vw - 32px));
+  width: min(420px, 100%);
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: #fff;
+  background: var(--surface);
   padding: 24px;
-  box-shadow: 0 14px 40px rgba(15, 30, 45, 0.12);
+  box-shadow: var(--shadow);
 }
 .key-box h1 {
-  margin: 0 0 6px;
-  font-size: 17px;
+  margin: 0 0 8px;
+  font-size: 18px;
 }
 .key-box p {
-  margin: 8px 0 14px;
+  margin: 0 0 14px;
   color: var(--muted);
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 .key-box input {
   width: 100%;
-  padding: 10px 11px;
+  height: 38px;
+  padding: 0 10px;
   border: 1px solid var(--line);
   border-radius: 7px;
-  font-size: 13px;
   outline: none;
 }
-.key-box input:focus { border-color: var(--blue); }
+.key-box input:focus {
+  border-color: var(--accent);
+}
 .key-box button {
   width: 100%;
+  height: 38px;
   margin-top: 10px;
-  padding: 10px;
-  border: 0;
   border-radius: 7px;
-  background: var(--blue);
+  background: var(--accent);
   color: #fff;
   font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
+  font-weight: 700;
 }
 .key-box .error {
-  color: #d4380d;
-  font-size: 12px;
-  min-height: 16px;
+  min-height: 18px;
   margin-top: 8px;
+  color: var(--danger);
+  font-size: 12px;
 }
-@media (max-width: 720px) {
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 24px 12px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+.empty-state strong {
+  color: var(--text);
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
   main {
-    flex-direction: column;
+    display: block;
   }
-  aside {
+  .side-panel {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
     width: auto;
-    max-height: 44%;
+    height: 84px;
     border-right: 0;
-    border-bottom: 1px solid var(--line);
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -8px 28px rgba(23, 42, 58, .12);
+    transition: height .24s ease;
   }
-  #map {
+  .side-panel.open {
+    height: min(76vh, 760px);
+  }
+  .sheet-handle {
+    display: block;
     width: 100%;
-    height: 56%;
+    height: 22px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .sheet-handle span {
+    width: 42px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--line-strong);
+  }
+  .sheet-mini {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    height: 62px;
+    padding: 0 12px;
+    background: var(--surface);
+  }
+  .mini-stat {
+    min-width: 0;
+    text-align: left;
+  }
+  .mini-stat b {
+    display: block;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+  .mini-stat span {
+    display: block;
+    color: var(--muted);
+    font-size: 10px;
+  }
+  .mini-stat.mid {
     flex: 1;
+    border-left: 1px solid var(--line);
+    padding-left: 10px;
+  }
+  .mini-open {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    font-size: 16px;
+  }
+  .tabs {
+    display: none;
+  }
+  .side-panel.open .sheet-mini {
+    display: none;
+  }
+  .side-panel.open .tabs {
+    display: grid;
+  }
+  .aside-body {
+    display: none;
+  }
+  .side-panel.open .aside-body {
+    display: block;
+  }
+  .map-shell {
+    height: 100%;
+  }
+  .map-toolbar {
+    top: 8px;
+    left: 8px;
+    right: 8px;
+  }
+  .filter-panel {
+    display: none;
+  }
+  .filter-panel.open {
+    display: grid;
+  }
+  .filter-toggle {
+    display: inline-flex;
+  }
+  .map-legend {
+    bottom: 102px;
+  }
+  .route-status {
+    bottom: 100px;
+  }
+}
+@media (max-width: 520px) {
+  header {
+    height: 48px;
+    padding: 0 10px;
+    gap: 8px;
+  }
+  .brand-mark {
+    width: 22px;
+    height: 22px;
+  }
+  .brand strong {
+    font-size: 14px;
+  }
+  .header-meta {
+    display: none;
+  }
+  .header-actions .btn {
+    min-height: 30px;
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  .toolbar-main {
+    gap: 5px;
+  }
+  .toolbar-select {
+    flex: 1 1 100px;
+    min-width: 0;
+  }
+  .search-wrap {
+    flex: 1 1 calc(100% - 92px);
+    min-width: 0;
+  }
+  .filter-toggle {
+    flex: 0 0 auto;
+  }
+  .toolbar-actions {
+    width: auto;
+    margin-left: auto;
+  }
+  .segmented {
+    flex: 1;
+  }
+  .segmented button {
+    flex: 1;
+  }
+  .map-legend {
+    left: 8px;
+    bottom: 96px;
+    max-width: calc(100% - 16px);
+  }
+  .route-status {
+    bottom: 96px;
+  }
+  .stat-grid {
+    gap: 6px;
+  }
+  .stat-cell b {
+    font-size: 16px;
   }
 }
 </style>
 </head>
 <body>
+<div id="app">
 <header>
-  <div class="brand"><span class="brand-dot"></span><strong>滴滴行程地图</strong></div>
-  <div class="header-meta" id="keyState">等待高德地图 Key</div>
+  <div class="brand"><span class="brand-mark" aria-hidden="true"></span><strong>滴滴行程地图</strong></div>
+  <div class="header-meta" id="headerMeta" aria-live="polite">正在加载数据</div>
+  <div class="header-actions">
+    <button class="btn" id="resetBtn" type="button">重置</button>
+    <button class="btn" id="copyBtn" type="button">复制视图</button>
+    <button class="btn primary" id="exportBtn" type="button">导出 CSV</button>
+  </div>
 </header>
 <main>
-  <aside>
-    <section class="stats" aria-label="行程统计">
-      <div class="stat"><b id="statTrips">0</b><span>行程</span></div>
-      <div class="stat"><b id="statDistance">0</b><span>公里</span></div>
-      <div class="stat"><b id="statAmount">0</b><span>金额</span></div>
-    </section>
-    <section class="filters" aria-label="筛选条件">
-      <label>城市
-        <select id="cityFilter"></select>
-      </label>
-      <label>年份
-        <select id="yearFilter"></select>
-      </label>
-      <label>来源
-        <select id="sourceFilter"></select>
-      </label>
-      <label>地点
-        <input id="searchInput" type="search" placeholder="搜索地点">
-      </label>
-      <label class="check">
-        <input id="lineToggle" type="checkbox">
-        <span>显示全部连线</span>
-      </label>
-      <div class="selection-bar">
-        <span class="selection-label" id="selectionLabel"></span>
-        <button class="clear-btn" id="clearSelectionBtn" type="button" hidden>清除选中</button>
-      </div>
-      <div class="legend">
-        <div class="legend-item"><span class="legend-dot start"></span>起点</div>
-        <div class="legend-item"><span class="legend-dot dest"></span>终点</div>
-        <div class="legend-item"><span class="legend-line start"></span>出发段</div>
-        <div class="legend-item"><span class="legend-line dest"></span>到达段</div>
-      </div>
-    </section>
-    <section class="selected-section" id="selectedSection" hidden>
-      <h2 class="summary-title">相关行程</h2>
-      <div class="selected-trips" id="selectedTrips"></div>
-    </section>
-    <section>
-      <h2 class="summary-title">高频地点</h2>
-      <div class="summary-list" id="summaryList"></div>
-    </section>
+  <aside class="side-panel" id="sidePanel" aria-label="分析面板">
+    <button class="sheet-handle" id="sheetHandle" type="button" aria-label="展开或收起分析面板"><span></span></button>
+    <button class="sheet-mini" id="sheetMini" type="button">
+      <span class="mini-stat"><b class="num" id="miniTrips">0</b><span>条行程</span></span>
+      <span class="mini-stat mid"><b class="num" id="miniDistance">0</b><span>公里</span></span>
+      <span class="mini-stat mid"><b class="num" id="miniAmount">¥0</b><span>金额</span></span>
+      <span class="mini-open" aria-hidden="true">⌃</span>
+    </button>
+    <div class="tabs" role="tablist" aria-label="分析视图">
+      <button class="tab-btn" id="tabOverview" role="tab" aria-selected="true" aria-controls="panelOverview" type="button">概览</button>
+      <button class="tab-btn" id="tabTrips" role="tab" aria-selected="false" aria-controls="panelTrips" type="button">行程</button>
+      <button class="tab-btn" id="tabPlaces" role="tab" aria-selected="false" aria-controls="panelPlaces" type="button">地点</button>
+    </div>
+    <div class="aside-body">
+      <section class="tab-panel active" id="panelOverview" role="tabpanel" aria-labelledby="tabOverview">
+        <div class="panel-section">
+          <div class="stat-grid" aria-label="筛选后统计">
+            <div class="stat-cell"><b class="num" id="statTrips">0</b><span>行程</span></div>
+            <div class="stat-cell"><b class="num" id="statDistance">0</b><span>公里</span></div>
+            <div class="stat-cell"><b class="num" id="statAmount">¥0</b><span>金额</span></div>
+            <div class="stat-cell"><b class="num" id="statAvg">-</b><span>平均单程</span></div>
+            <div class="stat-cell wide"><b class="num" id="statUnresolved">0</b><span>未定位地点</span></div>
+          </div>
+        </div>
+        <div class="panel-section">
+          <h2 class="section-title">月度趋势</h2>
+          <div class="chart-box" id="trendChart"><div class="chart-empty">图表加载中</div></div>
+        </div>
+        <div class="panel-section">
+          <h2 class="section-title">城市分布</h2>
+          <div class="chart-box city-chart" id="cityChart"><div class="chart-empty">图表加载中</div></div>
+        </div>
+        <div class="panel-section">
+          <h2 class="section-title">高频路线</h2>
+          <div class="list" id="routeList"></div>
+        </div>
+        <div class="panel-section">
+          <h2 class="section-title">未定位行程</h2>
+          <div class="list" id="unresolvedList"></div>
+        </div>
+      </section>
+      <section class="tab-panel" id="panelTrips" role="tabpanel" aria-labelledby="tabTrips">
+        <div class="panel-section">
+          <h2 class="section-title">行程列表 <span class="count" id="tripListCount">0</span></h2>
+          <div class="table-wrap">
+            <table class="trip-table" id="tripTable">
+              <thead>
+                <tr>
+                  <th class="sortable" data-sort="time">时间 <span class="arrow"></span></th>
+                  <th class="sortable" data-sort="route">起终点 <span class="arrow"></span></th>
+                  <th class="sortable" data-sort="city">城市 <span class="arrow"></span></th>
+                  <th class="sortable" data-sort="car">车型 <span class="arrow"></span></th>
+                  <th class="sortable" data-sort="distance">里程 <span class="arrow"></span></th>
+                  <th class="sortable" data-sort="amount">金额 <span class="arrow"></span></th>
+                </tr>
+              </thead>
+              <tbody id="tripTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+      <section class="tab-panel" id="panelPlaces" role="tabpanel" aria-labelledby="tabPlaces">
+        <div class="panel-section" id="placeDetailSection"></div>
+        <div class="panel-section">
+          <h2 class="section-title">高频地点</h2>
+          <div class="list" id="placeList"></div>
+        </div>
+      </section>
+    </div>
   </aside>
-  <div id="map"></div>
+  <div class="map-shell" id="mapShell">
+    <div id="map" role="application" aria-label="滴滴行程地图"></div>
+    <div class="map-toolbar">
+      <div class="toolbar-main">
+        <div class="search-wrap">
+          <input id="searchInput" type="search" placeholder="搜索地点、地址" aria-label="搜索地点">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+        </div>
+        <button class="btn filter-toggle" id="filterToggle" type="button" aria-expanded="false">筛选</button>
+      </div>
+      <div class="filter-panel" id="filterPanel">
+        <div class="filter-field">
+          <label for="cityFilter">城市</label>
+          <select class="toolbar-select" id="cityFilter" aria-label="城市筛选"></select>
+        </div>
+        <div class="filter-field">
+          <label for="yearFilter">年份</label>
+          <select class="toolbar-select" id="yearFilter" aria-label="年份筛选"></select>
+        </div>
+        <div class="filter-field">
+          <label for="monthFilter">月份</label>
+          <select class="toolbar-select" id="monthFilter" aria-label="月份筛选"></select>
+        </div>
+        <div class="filter-field">
+          <label for="sourceFilter">来源</label>
+          <select class="toolbar-select" id="sourceFilter" aria-label="来源筛选"></select>
+        </div>
+        <div class="filter-field">
+          <label for="dateFrom">从</label>
+          <input id="dateFrom" type="date" aria-label="开始日期">
+        </div>
+        <div class="filter-field">
+          <label for="dateTo">至</label>
+          <input id="dateTo" type="date" aria-label="结束日期">
+        </div>
+        <div class="filter-field">
+          <label for="mapStyle">底图</label>
+          <select id="mapStyle" aria-label="底图风格">
+            <option value="light">浅色</option>
+            <option value="fresh">清新</option>
+            <option value="dark">深色</option>
+            <option value="normal">标准</option>
+          </select>
+        </div>
+        <div class="filter-field" id="heatRoleField">
+          <label>热力</label>
+          <div class="segmented" aria-label="热力角色">
+            <button type="button" data-heat-role="all" class="active">全部</button>
+            <button type="button" data-heat-role="start">起点</button>
+            <button type="button" data-heat-role="dest">终点</button>
+          </div>
+        </div>
+      </div>
+      <div class="view-actions">
+        <div class="segmented" aria-label="地图视图">
+          <button type="button" data-mode="places" class="active">地点</button>
+          <button type="button" data-mode="heat">热力</button>
+          <button type="button" data-mode="lines">连线</button>
+        </div>
+        <div class="toolbar-actions">
+          <button class="icon-btn" id="zoomInBtn" type="button" aria-label="放大地图">+</button>
+          <button class="icon-btn" id="zoomOutBtn" type="button" aria-label="缩小地图">−</button>
+          <button class="btn" id="fitBtn" type="button">适配视野</button>
+          <button class="btn danger-ghost" id="clearSelectionBtn" type="button" hidden>清除选中</button>
+        </div>
+      </div>
+    </div>
+    <div class="map-legend" id="mapLegend" aria-hidden="true"></div>
+    <div class="route-status" id="routeStatus" hidden><span class="label" id="routeStatusText"></span></div>
+  </div>
 </main>
+</div>
 <div id="keyOverlay" class="key-overlay">
   <div class="key-box">
     <h1>配置高德地图 Key</h1>
-    <p>页面需要高德 Web 端 JS API Key 才能加载地图。Key 只会保存在当前浏览器，不会写入文件。</p>
-    <input id="keyInput" type="text" autocomplete="off" placeholder="粘贴高德地图 Key">
+    <p>页面需要高德 Web 端 JS API Key。Key 只保存在当前浏览器，不会写入文件或 URL。</p>
+    <input id="keyInput" type="password" autocomplete="off" placeholder="粘贴高德地图 Key">
     <button id="keyButton" type="button">加载地图</button>
     <div class="error" id="keyError"></div>
   </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
 <script>
 window.__TRIPS__ = null;
 window.__AMAP_KEY__ = "";
+window.__AMAP_SECURITY_JS_CODE__ = "";
 </script>
 <script>
-const trips = window.__TRIPS__ || [];
-let map = null;
-let infoWindow = null;
-let key = window.__AMAP_KEY__ ||
-  localStorage.getItem("amap_key") ||
-  new URLSearchParams(location.search).get("key") ||
-  "";
-let currentCounts = new Map();
-const markerMap = new Map();
-const lines = [];
-let selectedKey = "";
+(function () {
+  "use strict";
 
-const cityFilter = document.getElementById("cityFilter");
-const yearFilter = document.getElementById("yearFilter");
-const sourceFilter = document.getElementById("sourceFilter");
-const searchInput = document.getElementById("searchInput");
-const lineToggle = document.getElementById("lineToggle");
-const selectionLabel = document.getElementById("selectionLabel");
-const clearSelectionBtn = document.getElementById("clearSelectionBtn");
-const selectedSection = document.getElementById("selectedSection");
-const selectedTripsList = document.getElementById("selectedTrips");
-const keyState = document.getElementById("keyState");
-const keyOverlay = document.getElementById("keyOverlay");
-const keyInput = document.getElementById("keyInput");
-const keyButton = document.getElementById("keyButton");
-const keyError = document.getElementById("keyError");
+  const rawTrips = window.__TRIPS__ || [];
+  const STYLE_MAP = {
+    light: "amap://styles/light",
+    fresh: "amap://styles/fresh",
+    dark: "amap://styles/dark",
+    normal: "normal"
+  };
+  const DEFAULT_STATE = {
+    city: "all",
+    year: "all",
+    month: "all",
+    source: "all",
+    q: "",
+    from: "",
+    to: "",
+    mode: "places",
+    tab: "overview",
+    place: "",
+    trip: "",
+    style: "light",
+    heatRole: "all",
+    sortKey: "time",
+    sortDir: "desc"
+  };
 
-function esc(value) {
-  return String(value == null ? "" : value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
+  function parseURLState() {
+    const params = new URLSearchParams(location.search);
+    const out = Object.assign({}, DEFAULT_STATE);
+    const set = function (key) {
+      const value = params.get(key);
+      if (value !== null && value !== "") out[key] = value;
+    };
+    ["city", "year", "month", "source", "q", "from", "to", "mode", "tab", "place", "trip", "style", "heatRole"].forEach(set);
+    return out;
+  }
 
-function parseNumber(value) {
-  const n = parseFloat(value);
-  return Number.isFinite(n) ? n : 0;
-}
+  const state = parseURLState();
+  const $ = function (id) {
+    return document.getElementById(id);
+  };
+  const el = {
+    headerMeta: $("headerMeta"),
+    miniTrips: $("miniTrips"),
+    miniDistance: $("miniDistance"),
+    miniAmount: $("miniAmount"),
+    statTrips: $("statTrips"),
+    statDistance: $("statDistance"),
+    statAmount: $("statAmount"),
+    statAvg: $("statAvg"),
+    statUnresolved: $("statUnresolved"),
+    searchInput: $("searchInput"),
+    cityFilter: $("cityFilter"),
+    yearFilter: $("yearFilter"),
+    monthFilter: $("monthFilter"),
+    sourceFilter: $("sourceFilter"),
+    dateFrom: $("dateFrom"),
+    dateTo: $("dateTo"),
+    mapStyle: $("mapStyle"),
+    filterPanel: $("filterPanel"),
+    filterToggle: $("filterToggle"),
+    heatRoleField: $("heatRoleField"),
+    mapLegend: $("mapLegend"),
+    routeStatus: $("routeStatus"),
+    routeStatusText: $("routeStatusText"),
+    clearSelectionBtn: $("clearSelectionBtn"),
+    fitBtn: $("fitBtn"),
+    zoomInBtn: $("zoomInBtn"),
+    zoomOutBtn: $("zoomOutBtn"),
+    resetBtn: $("resetBtn"),
+    copyBtn: $("copyBtn"),
+    exportBtn: $("exportBtn"),
+    sidePanel: $("sidePanel"),
+    sheetHandle: $("sheetHandle"),
+    sheetMini: $("sheetMini"),
+    tripTableBody: $("tripTableBody"),
+    tripListCount: $("tripListCount"),
+    placeList: $("placeList"),
+    placeDetailSection: $("placeDetailSection"),
+    routeList: $("routeList"),
+    unresolvedList: $("unresolvedList"),
+    keyOverlay: $("keyOverlay"),
+    keyInput: $("keyInput"),
+    keyButton: $("keyButton"),
+    keyError: $("keyError")
+  };
 
-function loadMap(apiKey) {
-  key = apiKey;
-  keyOverlay.classList.add("hidden");
-  keyState.textContent = "正在加载地图";
-  const script = document.createElement("script");
-  script.src = "https://webapi.amap.com/maps?v=2.0&key=" + encodeURIComponent(apiKey);
-  script.async = true;
-  script.onload = function () {
-    if (!window.AMap) {
-      showKeyError("地图 SDK 加载失败，请检查 Key。");
+  let map = null;
+  let infoWindow = null;
+  let cluster = null;
+  let heat = null;
+  let odOverlays = [];
+  let selectedTripOverlay = null;
+  let driving = null;
+  let drivingOverlay = null;
+  let drivingRequest = 0;
+  let pluginsReady = false;
+  let searchTimer = null;
+  let fitTimer = null;
+  let statusTimer = null;
+  let trendChart = null;
+  let cityChart = null;
+  let chartsReady = false;
+
+  function parseNumber(value) {
+    const n = parseFloat(value);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function parseDate(value) {
+    if (!value) return null;
+    const match = /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/.exec(String(value));
+    if (!match) return null;
+    const date = new Date(
+      Number(match[1]),
+      Number(match[2]) - 1,
+      Number(match[3]),
+      Number(match[4] || 0),
+      Number(match[5] || 0),
+      Number(match[6] || 0)
+    );
+    return isNaN(date.getTime()) ? null : date;
+  }
+
+  function pad2(value) {
+    return String(value).padStart(2, "0");
+  }
+
+  function esc(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function fmtTime(value) {
+    if (!value) return "时间缺失";
+    return String(value).slice(0, 16);
+  }
+
+  function fmtAmount(value) {
+    if (value == null || value === "") return "-";
+    const n = parseNumber(value);
+    return "¥" + n.toFixed(2);
+  }
+
+  function fmtDistance(value) {
+    if (value == null || value === "") return "-";
+    const n = parseNumber(value);
+    return n.toFixed(1) + " km";
+  }
+
+  const places = [];
+  const placeIndex = new Map();
+  const unresolvedIndex = new Map();
+
+  function validLngLat(place) {
+    return place && place.lng && place.lat && Number.isFinite(Number(place.lng)) && Number.isFinite(Number(place.lat));
+  }
+
+  function getOrCreatePlace(city, name, lat, lng, matchedName, address) {
+    const cleanName = String(name || "").trim();
+    if (lat == null || lat === "" || lng == null || lng === "") return null;
+    const latNum = Number(lat);
+    const lngNum = Number(lng);
+    if (!cleanName || !Number.isFinite(latNum) || !Number.isFinite(lngNum)) return null;
+    const key = city + "|" + cleanName + "|" + lngNum.toFixed(5) + "," + latNum.toFixed(5);
+    if (placeIndex.has(key)) return placeIndex.get(key);
+    const place = {
+      id: places.length,
+      key: key,
+      city: city,
+      name: cleanName,
+      lat: latNum,
+      lng: lngNum,
+      matchedName: String(matchedName || ""),
+      address: String(address || ""),
+      tripIds: []
+    };
+    placeIndex.set(key, place);
+    places.push(place);
+    return place;
+  }
+
+  function addUnresolved(trip, role, name) {
+    const cleanName = String(name || "").trim() || (role === "起点" ? "未命名起点" : "未命名终点");
+    const key = trip.cityNorm + "|" + role + "|" + cleanName;
+    if (!unresolvedIndex.has(key)) {
+      unresolvedIndex.set(key, { key: key, city: trip.cityNorm, role: role, name: cleanName, tripIds: [] });
+    }
+    unresolvedIndex.get(key).tripIds.push(trip.id);
+  }
+
+  const trips = rawTrips.map(function (raw, index) {
+    const pickupTs = parseDate(raw.pickup);
+    const year = pickupTs ? String(pickupTs.getFullYear()) : "未知";
+    const month = pickupTs ? year + "-" + pad2(pickupTs.getMonth() + 1) : "未知";
+    const date = pickupTs
+      ? year + "-" + pad2(pickupTs.getMonth() + 1) + "-" + pad2(pickupTs.getDate())
+      : "";
+    const trip = Object.assign({}, raw, {
+      id: index,
+      pickupTs: pickupTs,
+      pickupYear: year,
+      pickupMonth: month,
+      pickupDate: date,
+      distanceNum: parseNumber(raw.distance),
+      amountNum: parseNumber(raw.amount),
+      originPlaceId: null,
+      destPlaceId: null
+    });
+    const originPlace = getOrCreatePlace(
+      trip.cityNorm,
+      raw.origin,
+      trip.o && trip.o.lat,
+      trip.o && trip.o.lng,
+      trip.o && trip.o.matched_name,
+      trip.o && trip.o.address
+    );
+    const destPlace = getOrCreatePlace(
+      trip.cityNorm,
+      raw.dest,
+      trip.d && trip.d.lat,
+      trip.d && trip.d.lng,
+      trip.d && trip.d.matched_name,
+      trip.d && trip.d.address
+    );
+    if (originPlace) {
+      trip.originPlaceId = originPlace.id;
+      originPlace.tripIds.push(index);
+    } else {
+      addUnresolved(trip, "起点", raw.origin);
+    }
+    if (destPlace) {
+      trip.destPlaceId = destPlace.id;
+      destPlace.tripIds.push(index);
+    } else {
+      addUnresolved(trip, "终点", raw.dest);
+    }
+    return trip;
+  });
+
+  function getPlace(id) {
+    if (id === "" || id === null || id === undefined) return null;
+    return places[Number(id)] || null;
+  }
+
+  function matchesFilters(trip) {
+    if (state.city !== "all" && trip.cityNorm !== state.city) return false;
+    if (state.year !== "all" && trip.pickupYear !== state.year) return false;
+    if (state.month !== "all" && trip.pickupMonth !== state.month) return false;
+    if (state.source !== "all" && trip.source !== state.source) return false;
+    if (state.from && trip.pickupDate && trip.pickupDate < state.from) return false;
+    if (state.to && trip.pickupDate && trip.pickupDate > state.to) return false;
+    const q = state.q.trim().toLowerCase();
+    if (q) {
+      const originPlace = getPlace(trip.originPlaceId);
+      const destPlace = getPlace(trip.destPlaceId);
+      const haystack = [
+        trip.origin,
+        trip.dest,
+        originPlace ? originPlace.matchedName : "",
+        originPlace ? originPlace.address : "",
+        destPlace ? destPlace.matchedName : "",
+        destPlace ? destPlace.address : ""
+      ].join(" ").toLowerCase();
+      if (haystack.indexOf(q) === -1) return false;
+    }
+    return true;
+  }
+
+  function getVisibleTrips() {
+    return trips.filter(matchesFilters);
+  }
+
+  function computePlaceStats(visible) {
+    const stats = new Map();
+    visible.forEach(function (trip) {
+      if (trip.originPlaceId !== null) {
+        const item = stats.get(trip.originPlaceId) || { start: 0, dest: 0, total: 0 };
+        item.start += 1;
+        item.total += 1;
+        stats.set(trip.originPlaceId, item);
+      }
+      if (trip.destPlaceId !== null) {
+        const item = stats.get(trip.destPlaceId) || { start: 0, dest: 0, total: 0 };
+        item.dest += 1;
+        item.total += 1;
+        stats.set(trip.destPlaceId, item);
+      }
+    });
+    return stats;
+  }
+
+  function updateStatsAndCharts() {
+    const visible = getVisibleTrips();
+    let distance = 0;
+    let amount = 0;
+    visible.forEach(function (trip) {
+      distance += trip.distanceNum;
+      amount += trip.amountNum;
+    });
+    const unresolved = visible.filter(function (t) {
+      return t.originPlaceId === null || t.destPlaceId === null;
+    }).length;
+    const avg = visible.length ? amount / visible.length : 0;
+    const distanceText = Math.round(distance).toLocaleString();
+    const amountText = "¥" + Math.round(amount).toLocaleString();
+
+    el.headerMeta.textContent = "已加载 " + trips.length + " 条 · 当前 " + visible.length + " 条";
+    el.miniTrips.textContent = visible.length;
+    el.miniDistance.textContent = distanceText;
+    el.miniAmount.textContent = amountText;
+    el.statTrips.textContent = visible.length;
+    el.statDistance.textContent = distanceText;
+    el.statAmount.textContent = amountText;
+    el.statAvg.textContent = visible.length ? "¥" + avg.toFixed(1) : "-";
+    el.statUnresolved.textContent = unresolved;
+    updateCharts(visible);
+  }
+
+  function populateFilters() {
+    const cityCounts = {};
+    const yearCounts = {};
+    const monthCounts = {};
+    const sourceCounts = {};
+    trips.forEach(function (trip) {
+      cityCounts[trip.cityNorm] = (cityCounts[trip.cityNorm] || 0) + 1;
+      yearCounts[trip.pickupYear] = (yearCounts[trip.pickupYear] || 0) + 1;
+      monthCounts[trip.pickupMonth] = (monthCounts[trip.pickupMonth] || 0) + 1;
+      sourceCounts[trip.source] = (sourceCounts[trip.source] || 0) + 1;
+    });
+
+    let html = '<option value="all">全部城市</option>';
+    Object.keys(cityCounts).sort(function (a, b) {
+      return (cityCounts[b] - cityCounts[a]) || a.localeCompare(b);
+    }).forEach(function (city) {
+      html += '<option value="' + esc(city) + '">' + esc(city) + "（" + cityCounts[city] + "）</option>";
+    });
+    el.cityFilter.innerHTML = html;
+
+    html = '<option value="all">全部年份</option>';
+    Object.keys(yearCounts).sort(function (a, b) {
+      return String(b).localeCompare(String(a));
+    }).forEach(function (year) {
+      html += '<option value="' + esc(year) + '">' + esc(year) + "（" + yearCounts[year] + "）</option>";
+    });
+    el.yearFilter.innerHTML = html;
+
+    html = '<option value="all">全部月份</option>';
+    Object.keys(monthCounts).sort().reverse().forEach(function (month) {
+      html += '<option value="' + esc(month) + '">' + esc(month) + "（" + monthCounts[month] + "）</option>";
+    });
+    el.monthFilter.innerHTML = html;
+
+    html = '<option value="all">全部来源</option>';
+    Object.keys(sourceCounts).sort(function (a, b) {
+      return (sourceCounts[b] - sourceCounts[a]) || String(a).localeCompare(String(b));
+    }).forEach(function (source) {
+      html += '<option value="' + esc(source) + '">' + esc(source) + "（" + sourceCounts[source] + "）</option>";
+    });
+    el.sourceFilter.innerHTML = html;
+  }
+
+  function syncControls() {
+    el.cityFilter.value = state.city;
+    el.yearFilter.value = state.year;
+    el.monthFilter.value = state.month;
+    el.sourceFilter.value = state.source;
+    el.searchInput.value = state.q;
+    el.dateFrom.value = state.from;
+    el.dateTo.value = state.to;
+    el.mapStyle.value = state.style;
+    document.querySelectorAll(".segmented [data-mode]").forEach(function (btn) {
+      btn.classList.toggle("active", btn.dataset.mode === state.mode);
+    });
+    document.querySelectorAll("[data-heat-role]").forEach(function (btn) {
+      btn.classList.toggle("active", btn.dataset.heatRole === state.heatRole);
+    });
+    el.heatRoleField.style.display = state.mode === "heat" ? "" : "none";
+    el.clearSelectionBtn.hidden = !state.place && state.trip === "";
+    selectTab(state.tab, true);
+  }
+
+  function writeURL() {
+    const params = new URLSearchParams();
+    const values = {
+      city: state.city,
+      year: state.year,
+      month: state.month,
+      source: state.source,
+      q: state.q,
+      from: state.from,
+      to: state.to,
+      mode: state.mode,
+      tab: state.tab,
+      place: state.place,
+      trip: state.trip,
+      style: state.style,
+      heatRole: state.heatRole
+    };
+    Object.keys(values).forEach(function (key) {
+      if (values[key] !== "" && values[key] !== DEFAULT_STATE[key]) {
+        params.set(key, values[key]);
+      }
+    });
+    const query = params.toString();
+    try {
+      const baseHref = location.href.split(/[?#]/)[0];
+      history.replaceState(null, "", query ? baseHref + "?" + query : baseHref);
+    } catch (err) {
+      // file:// and some browsers restrict history updates; the page still works.
+    }
+  }
+
+  function renderAll() {
+    pruneSelection(getVisibleTrips());
+    updateStatsAndCharts();
+    renderRouteList();
+    renderUnresolvedList();
+    renderTable();
+    renderPlacesList();
+    renderMap();
+    writeURL();
+  }
+
+  function clearMapOverlays() {
+    if (cluster) {
+      try { cluster.setMap(null); } catch (err) { /* plugin cleanup is best-effort */ }
+      cluster = null;
+    }
+    if (heat) {
+      try { heat.setMap(null); } catch (err) { /* plugin cleanup is best-effort */ }
+      heat = null;
+    }
+    odOverlays.forEach(function (entry) {
+      if (entry.line) entry.line.setMap(null);
+    });
+    odOverlays = [];
+    if (selectedTripOverlay) {
+      selectedTripOverlay.setMap(null);
+      selectedTripOverlay = null;
+    }
+    if (drivingOverlay) {
+      drivingOverlay.setMap(null);
+      drivingOverlay = null;
+    }
+  }
+
+  function clearDriving() {
+    drivingRequest += 1;
+    if (drivingOverlay) {
+      drivingOverlay.setMap(null);
+      drivingOverlay = null;
+    }
+    el.routeStatus.hidden = true;
+    el.routeStatus.className = "route-status";
+  }
+
+  function flashStatus(text, tone) {
+    el.routeStatus.hidden = false;
+    el.routeStatus.className = "route-status" + (tone ? " " + tone : "");
+    el.routeStatusText.textContent = text;
+    if (statusTimer) window.clearTimeout(statusTimer);
+    statusTimer = window.setTimeout(function () {
+      if (!state.trip) {
+        el.routeStatus.hidden = true;
+        el.routeStatus.className = "route-status";
+      }
+    }, 3200);
+  }
+
+  function renderMap() {
+    if (!map || !pluginsReady) return;
+    clearMapOverlays();
+    const visible = getVisibleTrips();
+    const stats = computePlaceStats(visible);
+    pruneSelection(visible);
+
+    if (state.mode === "heat") {
+      renderHeat(stats);
+      updateLegend("heat");
+    } else if (state.mode === "lines") {
+      renderOD(visible);
+      updateLegend("lines");
+    } else {
+      renderPlaces(stats);
+      updateLegend("places");
+    }
+
+    renderSelectedTrip(visible);
+    if (state.place) renderRelatedPlaceRoutes(visible, Number(state.place));
+
+    if (!state.trip && !state.place) scheduleFit(stats);
+  }
+
+  function renderPlaces(stats) {
+    const points = [];
+    stats.forEach(function (counts, id) {
+      const place = getPlace(id);
+      if (place) {
+        points.push({
+          lnglat: [place.lng, place.lat],
+          placeId: place.id,
+          name: place.name,
+          city: place.city,
+          start: counts.start,
+          dest: counts.dest,
+          total: counts.total
+        });
+      }
+    });
+    if (!points.length) return;
+
+    cluster = new AMap.MarkerCluster(map, points, {
+      gridSize: 70,
+      maxZoom: 17,
+      averageCenter: true,
+      renderClusterMarker: function (context) {
+        const element = document.createElement("div");
+        element.className = "cluster-marker";
+        element.textContent = context.count;
+        context.marker.setContent(element);
+      },
+      renderMarker: function (context) {
+        const data = context.data[0];
+        const element = document.createElement("div");
+        const roleClass = data.start > 0 && data.dest > 0 ? "both" : (data.dest > 0 ? "dest" : "start");
+        element.className = "place-marker " + roleClass + (String(data.placeId) === state.place ? " selected" : "");
+        element.textContent = data.total;
+        context.marker.setContent(element);
+        context.marker.on("click", function () {
+          selectPlace(String(data.placeId), true);
+        });
+      }
+    });
+    cluster.on("click", function (event) {
+      const data = event.clusterData || event.data || [];
+      if (!data.length) return;
+      if (data.length <= 1) return;
+      let bounds = null;
+      data.forEach(function (item) {
+        const point = item.lnglat;
+        const lng = Array.isArray(point) ? point[0] : (point ? point.lng : null);
+        const lat = Array.isArray(point) ? point[1] : (point ? point.lat : null);
+        if (Number.isFinite(Number(lng)) && Number.isFinite(Number(lat))) {
+          const southwest = new AMap.LngLat(Number(lng), Number(lat));
+          const northeast = new AMap.LngLat(Number(lng), Number(lat));
+          bounds = bounds ? bounds.extend(southwest) : new AMap.Bounds(southwest, northeast);
+        }
+      });
+      if (bounds) map.setBounds(bounds, false, [70, 70, 70, 70]);
+    });
+  }
+
+  function renderHeat(stats) {
+    const data = [];
+    let max = 1;
+    stats.forEach(function (counts, id) {
+      const place = getPlace(id);
+      if (!place) return;
+      const count = state.heatRole === "start" ? counts.start : (state.heatRole === "dest" ? counts.dest : counts.total);
+      if (count > 0) {
+        data.push({ lng: place.lng, lat: place.lat, count: count });
+        if (count > max) max = count;
+      }
+    });
+    if (!data.length) return;
+    heat = new AMap.HeatMap(map, {
+      radius: 28,
+      opacity: [0, 0.78],
+      gradient: {
+        0.15: "#3b82f6",
+        0.35: "#06b6d4",
+        0.55: "#f59e0b",
+        0.8: "#f97316",
+        1: "#dc2626"
+      }
+    });
+    heat.setDataSet({ data: data, max: max });
+  }
+
+  function renderOD(visible) {
+    const agg = new Map();
+    visible.forEach(function (trip) {
+      if (trip.originPlaceId === null || trip.destPlaceId === null) return;
+      const key = trip.originPlaceId + ">" + trip.destPlaceId;
+      const entry = agg.get(key) || {
+        origin: getPlace(trip.originPlaceId),
+        dest: getPlace(trip.destPlaceId),
+        count: 0,
+        distance: 0,
+        amount: 0
+      };
+      entry.count += 1;
+      entry.distance += trip.distanceNum;
+      entry.amount += trip.amountNum;
+      agg.set(key, entry);
+    });
+    let maxCount = 1;
+    agg.forEach(function (entry) {
+      if (entry.count > maxCount) maxCount = entry.count;
+    });
+    agg.forEach(function (entry) {
+      const width = 2 + Math.round(4 * entry.count / maxCount);
+      const opacity = 0.28 + Math.min(0.45, entry.count / 20);
+      const line = new AMap.Polyline({
+        path: [[entry.origin.lng, entry.origin.lat], [entry.dest.lng, entry.dest.lat]],
+        strokeColor: state.mode === "lines" ? "#0f766e" : "#2563eb",
+        strokeWeight: width,
+        strokeOpacity: opacity,
+        showDir: true,
+        dirColor: "#ffffff",
+        lineJoin: "round",
+        zIndex: 70
+      });
+      line.setMap(map);
+      odOverlays.push({ line: line, entry: entry });
+    });
+  }
+
+  function renderSelectedTrip(visible) {
+    if (state.trip === "") return;
+    const trip = trips[Number(state.trip)];
+    if (!trip || trip.originPlaceId === null || trip.destPlaceId === null) return;
+    if (drivingOverlay) return;
+    const origin = getPlace(trip.originPlaceId);
+    const dest = getPlace(trip.destPlaceId);
+    selectedTripOverlay = new AMap.Polyline({
+      path: [[origin.lng, origin.lat], [dest.lng, dest.lat]],
+      strokeColor: "#d97706",
+      strokeWeight: 6,
+      strokeOpacity: 0.92,
+      showDir: true,
+      dirColor: "#ffffff",
+      lineJoin: "round",
+      zIndex: 140
+    });
+    selectedTripOverlay.setMap(map);
+  }
+
+  function renderRelatedPlaceRoutes(visible, placeId) {
+    const related = visible.filter(function (trip) {
+      return trip.originPlaceId === placeId || trip.destPlaceId === placeId;
+    });
+    related.slice(0, 30).forEach(function (trip) {
+      if (trip.originPlaceId === null || trip.destPlaceId === null) return;
+      const origin = getPlace(trip.originPlaceId);
+      const dest = getPlace(trip.destPlaceId);
+      const line = new AMap.Polyline({
+        path: [[origin.lng, origin.lat], [dest.lng, dest.lat]],
+        strokeColor: "#2563eb",
+        strokeWeight: 4,
+        strokeOpacity: 0.58,
+        lineJoin: "round",
+        zIndex: 80
+      });
+      line.setMap(map);
+      odOverlays.push({ line: line, entry: null });
+    });
+  }
+
+  function updateLegend(mode) {
+    if (mode === "heat") {
+      el.mapLegend.innerHTML = '<span class="legend-item"><span class="legend-dot start"></span>低</span><span class="legend-item"><span class="legend-dot dest"></span>高</span>';
+    } else if (mode === "lines") {
+      el.mapLegend.innerHTML = '<span class="legend-item"><span class="legend-line route"></span>高频 OD</span><span class="legend-item"><span class="legend-line selected"></span>选中行程</span>';
+    } else {
+      el.mapLegend.innerHTML = '<span class="legend-item"><span class="legend-dot start"></span>起点</span><span class="legend-item"><span class="legend-dot dest"></span>终点</span><span class="legend-item"><span class="legend-dot both"></span>混合</span>';
+    }
+  }
+
+  function scheduleFit(stats) {
+    if (fitTimer) window.cancelAnimationFrame(fitTimer);
+    fitTimer = window.requestAnimationFrame(function () {
+      fitTimer = null;
+      if (state.trip !== "" || state.place !== "") return;
+      const points = [];
+      stats.forEach(function (counts, id) {
+        const place = getPlace(id);
+        if (place && counts.total > 0) points.push(place);
+      });
+      fitPoints(points);
+    });
+  }
+
+  function fitPoints(points) {
+    if (!map || !points.length) {
+      if (map) map.setZoomAndCenter(5, [108, 35]);
+      return;
+    }
+    let bounds = null;
+    points.forEach(function (place) {
+      const southwest = new AMap.LngLat(place.lng, place.lat);
+      const northeast = new AMap.LngLat(place.lng, place.lat);
+      bounds = bounds ? bounds.extend(southwest) : new AMap.Bounds(southwest, northeast);
+    });
+    if (bounds) map.setBounds(bounds, false, [80, 80, 80, 80]);
+  }
+
+  function selectPlace(id, fromMap) {
+    state.place = String(id);
+    state.trip = "";
+    clearDriving();
+    renderAll();
+    openInfoForPlace(getPlace(id));
+    fitPoints([getPlace(id)]);
+    openMobilePanel();
+  }
+
+  function openInfoForPlace(place) {
+    if (!map || !infoWindow || !place) return;
+    const visible = getVisibleTrips();
+    const stats = computePlaceStats(visible);
+    const counts = stats.get(place.id) || { start: 0, dest: 0, total: 0 };
+    const related = visible.filter(function (trip) {
+      return trip.originPlaceId === place.id || trip.destPlaceId === place.id;
+    });
+    const rows = related.slice(0, 8).map(function (trip) {
+      return '<div class="info-item">' + esc(fmtTime(trip.pickup)) + " · " + esc(trip.origin) + " → " + esc(trip.dest) +
+        (trip.amount ? " · " + esc(fmtAmount(trip.amount)) : "") + "</div>";
+    }).join("");
+    const matched = place.matchedName || place.name;
+    const address = place.address ? " · " + place.address : "";
+    infoWindow.setContent(
+      '<div class="info-title">' + esc(place.name) + "</div>" +
+      '<div class="info-meta">' + esc(place.city) + " · " + esc(matched) + esc(address) + "</div>" +
+      '<div class="info-counts"><span class="start">起点 ' + counts.start + '</span><span class="dest">终点 ' + counts.dest +
+      '</span><span class="total">合计 ' + counts.total + "</span></div>" +
+      '<div class="info-list">' + (rows || '<div class="info-item">无匹配行程</div>') + "</div>"
+    );
+    infoWindow.open(map, [place.lng, place.lat]);
+  }
+
+  function selectTrip(id) {
+    const trip = trips[Number(id)];
+    if (!trip) return;
+    state.trip = String(id);
+    state.place = "";
+    clearDriving();
+    renderAll();
+    loadDriving(trip);
+    selectTab("trips");
+    openMobilePanel();
+  }
+
+  function loadDriving(trip) {
+    if (!map || !pluginsReady || !window.AMap.Driving) {
+      flashStatus("路线插件未就绪", "warn");
+      return;
+    }
+    if (trip.originPlaceId === null || trip.destPlaceId === null) {
+      flashStatus("起终点坐标缺失，无法规划参考路线", "error");
+      return;
+    }
+    const origin = getPlace(trip.originPlaceId);
+    const dest = getPlace(trip.destPlaceId);
+    clearDriving();
+    drivingRequest += 1;
+    const requestId = drivingRequest;
+    el.routeStatus.hidden = false;
+    el.routeStatus.className = "route-status";
+    el.routeStatusText.textContent = "正在规划参考路线…";
+    driving = new AMap.Driving({
+      policy: AMap.DrivingPolicy.LEAST_TIME,
+      showTraffic: false
+    });
+    driving.search([origin.lng, origin.lat], [dest.lng, dest.lat], function (status, result) {
+      if (requestId !== drivingRequest) return;
+      if (status === "complete" && result && result.routes && result.routes.length) {
+        const route = result.routes[0];
+        const path = [];
+        route.steps.forEach(function (step, index) {
+          if (index === 0 && step.start_location) path.push(step.start_location);
+          if (step.end_location) path.push(step.end_location);
+        });
+        if (path.length > 1) {
+          drivingOverlay = new AMap.Polyline({
+            path: path,
+            strokeColor: "#d97706",
+            strokeWeight: 6,
+            strokeOpacity: 0.9,
+            lineJoin: "round",
+            zIndex: 150
+          });
+          drivingOverlay.setMap(map);
+          map.setFitView([drivingOverlay], false, [90, 90, 90, 90], 16);
+          const km = route.distance ? (route.distance / 1000).toFixed(1) : "-";
+          const minutes = route.time ? Math.round(route.time / 60) : "-";
+          flashStatus("参考路线 " + km + " km · " + minutes + " 分钟", "ok");
+          return;
+        }
+      }
+      flashStatus("未获取到参考路线", "error");
+    });
+  }
+
+  function clearSelection() {
+    state.place = "";
+    state.trip = "";
+    clearDriving();
+    if (infoWindow) infoWindow.close();
+    renderAll();
+  }
+
+  function pruneSelection(visible) {
+    if (state.trip !== "" && !visible.some(function (t) { return t.id === Number(state.trip); })) {
+      state.trip = "";
+      clearDriving();
+    }
+    const stats = computePlaceStats(visible);
+    if (state.place !== "" && !stats.has(Number(state.place))) {
+      state.place = "";
+      if (infoWindow) infoWindow.close();
+    }
+    el.clearSelectionBtn.hidden = !state.place && state.trip === "";
+  }
+
+  function renderTable() {
+    const visible = getVisibleTrips();
+    const sorted = visible.slice().sort(function (a, b) {
+      let left;
+      let right;
+      if (state.sortKey === "time") {
+        left = a.pickupTs ? a.pickupTs.getTime() : -Infinity;
+        right = b.pickupTs ? b.pickupTs.getTime() : -Infinity;
+      } else if (state.sortKey === "route") {
+        left = String(a.origin + " → " + a.dest);
+        right = String(b.origin + " → " + b.dest);
+      } else if (state.sortKey === "city") {
+        left = String(a.cityNorm);
+        right = String(b.cityNorm);
+      } else if (state.sortKey === "car") {
+        left = String(a.car);
+        right = String(b.car);
+      } else if (state.sortKey === "distance") {
+        left = a.distanceNum;
+        right = b.distanceNum;
+      } else {
+        left = a.amountNum;
+        right = b.amountNum;
+      }
+      if (left === right) return 0;
+      if (state.sortDir === "asc") return left > right ? 1 : -1;
+      return left < right ? 1 : -1;
+    });
+    el.tripListCount.textContent = sorted.length;
+    el.tripTableBody.innerHTML = sorted.map(function (trip) {
+      const missing = trip.originPlaceId === null || trip.destPlaceId === null;
+      return '<tr class="' + (String(trip.id) === state.trip ? "selected" : "") + (missing ? " missing" : "") +
+        '" data-id="' + trip.id + '">' +
+        '<td>' + esc(fmtTime(trip.pickup)) + (missing ? ' <span class="tag warn">未定位</span>' : "") + "</td>" +
+        '<td class="route-cell" title="' + esc(trip.origin + " → " + trip.dest) + '">' + esc(trip.origin) + " → " + esc(trip.dest) + "</td>" +
+        "<td>" + esc(trip.cityNorm) + "</td>" +
+        "<td>" + esc(trip.car || "-") + "</td>" +
+        '<td class="num">' + esc(fmtDistance(trip.distance)) + "</td>" +
+        '<td class="num">' + esc(fmtAmount(trip.amount)) + "</td>" +
+        "</tr>";
+    }).join("") || '<tr><td colspan="6"><div class="empty-state"><strong>没有匹配的行程</strong><span>调整筛选条件后再试</span></div></td></tr>';
+  }
+
+  function renderPlacesList() {
+    const visible = getVisibleTrips();
+    const stats = computePlaceStats(visible);
+    const entries = [];
+    stats.forEach(function (counts, id) {
+      const place = getPlace(id);
+      if (place) {
+        entries.push({ place: place, counts: counts });
+      }
+    });
+    entries.sort(function (a, b) {
+      return b.counts.total - a.counts.total || a.place.name.localeCompare(b.place.name);
+    });
+
+    const selectedPlace = getPlace(state.place);
+    if (selectedPlace && stats.has(selectedPlace.id)) {
+      const counts = stats.get(selectedPlace.id);
+      const related = visible.filter(function (trip) {
+        return trip.originPlaceId === selectedPlace.id || trip.destPlaceId === selectedPlace.id;
+      });
+      el.placeDetailSection.innerHTML =
+        '<div class="panel-section"><div class="detail-block">' +
+        "<h3>" + esc(selectedPlace.name) + "</h3>" +
+        '<p class="meta">' + esc(selectedPlace.city) + (selectedPlace.matchedName ? " · " + esc(selectedPlace.matchedName) : "") +
+        (selectedPlace.address ? "<br>" + esc(selectedPlace.address) : "") + "</p>" +
+        '<div class="detail-grid">' +
+        '<div class="detail-cell"><b class="num">' + counts.start + "</b><span>起点</span></div>" +
+        '<div class="detail-cell"><b class="num">' + counts.dest + "</b><span>终点</span></div>" +
+        '<div class="detail-cell"><b class="num">' + counts.total + "</b><span>合计</span></div>" +
+        "</div>" +
+        '<div class="route-detail">' + related.length + " 条相关行程 · " +
+        '<button class="btn" type="button" id="relatedTripsBtn">查看行程</button></div>' +
+        "</div></div>";
+      const relatedBtn = $("relatedTripsBtn");
+      if (relatedBtn) {
+        relatedBtn.addEventListener("click", function () {
+          selectTab("trips");
+        });
+      }
+    } else {
+      el.placeDetailSection.innerHTML = "";
+    }
+
+    el.placeList.innerHTML = entries.slice(0, 40).map(function (entry) {
+      const place = entry.place;
+      const counts = entry.counts;
+      const selected = String(place.id) === state.place ? " selected" : "";
+      return '<button class="list-row' + selected + '" data-place-id="' + place.id + '" type="button">' +
+        '<span class="name" title="' + esc(place.name) + '">' + esc(place.name) + "</span>" +
+        '<span class="badge start">' + counts.start + '</span><span class="badge dest">' + counts.dest +
+        '</span><span class="badge teal">' + counts.total + "</span></button>";
+    }).join("") || '<div class="empty-state"><strong>没有匹配地点</strong><span>调整筛选条件后再试</span></div>';
+  }
+
+  function renderRouteList() {
+    const visible = getVisibleTrips();
+    const agg = new Map();
+    visible.forEach(function (trip) {
+      if (trip.originPlaceId === null || trip.destPlaceId === null) return;
+      const key = trip.originPlaceId + ">" + trip.destPlaceId;
+      const entry = agg.get(key) || {
+        origin: getPlace(trip.originPlaceId),
+        dest: getPlace(trip.destPlaceId),
+        count: 0,
+        distance: 0
+      };
+      entry.count += 1;
+      entry.distance += trip.distanceNum;
+      agg.set(key, entry);
+    });
+    const entries = Array.from(agg.values()).sort(function (a, b) {
+      return b.count - a.count || b.distance - a.distance;
+    }).slice(0, 8);
+    el.routeList.innerHTML = entries.map(function (entry) {
+      return '<button class="list-row" data-route-trip="' + entry.origin.id + ":" + entry.dest.id + '" type="button">' +
+        '<span class="name" title="' + esc(entry.origin.name + " → " + entry.dest.name) + '">' +
+        esc(entry.origin.name) + " → " + esc(entry.dest.name) + "</span>" +
+        '<span class="badge teal">' + entry.count + "</span></button>";
+    }).join("") || '<div class="empty-state"><strong>没有匹配路线</strong><span>筛选后暂无完整起终点数据</span></div>';
+
+    Array.from(el.routeList.querySelectorAll("[data-route-trip]")).forEach(function (button) {
+      button.addEventListener("click", function () {
+        const parts = button.dataset.routeTrip.split(":");
+        const trip = visible.find(function (t) {
+          return t.originPlaceId === Number(parts[0]) && t.destPlaceId === Number(parts[1]);
+        });
+        if (trip) selectTrip(trip.id);
+      });
+    });
+  }
+
+  function renderUnresolvedList() {
+    const visible = getVisibleTrips();
+    const counts = new Map();
+    visible.forEach(function (trip) {
+      ["origin", "dest"].forEach(function (role) {
+        const id = role === "origin" ? trip.originPlaceId : trip.destPlaceId;
+        const rawName = role === "origin" ? trip.origin : trip.dest;
+        const name = String(rawName || "").trim() || (role === "origin" ? "未命名起点" : "未命名终点");
+        if (id === null) {
+          const key = trip.cityNorm + "|" + role + "|" + name;
+          const item = counts.get(key) || { name: name, city: trip.cityNorm, role: role, count: 0 };
+          item.count += 1;
+          counts.set(key, item);
+        }
+      });
+    });
+    const entries = Array.from(counts.values()).sort(function (a, b) {
+      return b.count - a.count;
+    }).slice(0, 8);
+    el.unresolvedList.innerHTML = entries.map(function (entry) {
+      return '<div class="list-row"><span class="sub" title="' + esc(entry.name) + '">' +
+        esc(entry.city) + " · " + esc(entry.role) + " · " + esc(entry.name) +
+        '</span><span class="badge dest">' + entry.count + "</span></div>";
+    }).join("") || '<div class="list-row"><span class="sub">当前筛选全部已定位</span></div>';
+  }
+
+  function initCharts() {
+    if (!window.echarts) {
+      $("trendChart").innerHTML = '<div class="chart-empty">图表组件未加载</div>';
+      $("cityChart").innerHTML = '<div class="chart-empty">图表组件未加载</div>';
+      return;
+    }
+    $("trendChart").innerHTML = "";
+    $("cityChart").innerHTML = "";
+    trendChart = window.echarts.init($("trendChart"));
+    cityChart = window.echarts.init($("cityChart"));
+    trendChart.on("click", function (params) {
+      if (params && params.data && params.data.monthKey) {
+        state.month = params.data.monthKey;
+        el.monthFilter.value = state.month;
+        renderAll();
+      }
+    });
+    cityChart.on("click", function (params) {
+      if (params && params.data && params.data.cityKey) {
+        state.city = params.data.cityKey;
+        el.cityFilter.value = state.city;
+        renderAll();
+      }
+    });
+    chartsReady = true;
+    updateCharts(getVisibleTrips());
+  }
+
+  function updateCharts(visible) {
+    if (!chartsReady || !trendChart || !cityChart) return;
+    const monthly = {};
+    const cityCounts = {};
+    visible.forEach(function (trip) {
+      const monthKey = trip.pickupMonth || "未知";
+      const item = monthly[monthKey] || { count: 0, amount: 0 };
+      item.count += 1;
+      item.amount += trip.amountNum;
+      monthly[monthKey] = item;
+      cityCounts[trip.cityNorm] = (cityCounts[trip.cityNorm] || 0) + 1;
+    });
+    const months = Object.keys(monthly).sort();
+    trendChart.setOption({
+      animation: false,
+      tooltip: {
+        trigger: "axis",
+        formatter: function (params) {
+          const p = params[0] || {};
+          const data = p.data || {};
+          return data.monthKey + "<br>行程 " + (data.count || 0) + " 条 · 金额 ¥" + Math.round(data.amount || 0);
+        }
+      },
+      grid: { left: 36, right: 8, top: 16, bottom: 22 },
+      xAxis: {
+        type: "category",
+        data: months,
+        axisLine: { lineStyle: { color: "#cbd5e1" } },
+        axisTick: { show: false },
+        axisLabel: { fontSize: 10, color: "#64748b" }
+      },
+      yAxis: {
+        type: "value",
+        minInterval: 1,
+        splitLine: { lineStyle: { color: "#eef2f5" } },
+        axisLabel: { fontSize: 10, color: "#64748b" }
+      },
+      series: [{
+        name: "行程",
+        type: "bar",
+        data: months.map(function (month) {
+          return { value: monthly[month].count, count: monthly[month].count, amount: monthly[month].amount, monthKey: month };
+        }),
+        itemStyle: { color: "#2563eb", borderRadius: [3, 3, 0, 0] },
+        barMaxWidth: 18
+      }]
+    }, true);
+
+    const cityEntries = Object.keys(cityCounts).sort(function (a, b) {
+      return cityCounts[b] - cityCounts[a];
+    }).map(function (city) {
+      return { name: city, value: cityCounts[city], cityKey: city };
+    });
+    const topCities = cityEntries.slice(0, 7);
+    const rest = cityEntries.slice(7).reduce(function (sum, item) {
+      return sum + item.value;
+    }, 0);
+    if (rest > 0) topCities.push({ name: "其他", value: rest, cityKey: "" });
+    cityChart.setOption({
+      animation: false,
+      tooltip: { trigger: "item" },
+      legend: {
+        type: "scroll",
+        bottom: 0,
+        textStyle: { fontSize: 10, color: "#64748b" }
+      },
+      series: [{
+        type: "pie",
+        radius: ["34%", "62%"],
+        center: ["50%", "44%"],
+        itemStyle: { borderColor: "#fff", borderWidth: 1, borderRadius: 3 },
+        data: topCities.map(function (item) {
+          return { name: item.name, value: item.value, cityKey: item.cityKey };
+        }),
+        label: { show: false }
+      }]
+    }, true);
+  }
+
+  function resizeCharts() {
+    if (trendChart) trendChart.resize();
+    if (cityChart) cityChart.resize();
+  }
+
+  function selectTab(tab, fromSync) {
+    state.tab = tab || "overview";
+    ["overview", "trips", "places"].forEach(function (name) {
+      const tabBtn = $("tab" + name.charAt(0).toUpperCase() + name.slice(1));
+      const panel = $("panel" + name.charAt(0).toUpperCase() + name.slice(1));
+      if (tabBtn) tabBtn.setAttribute("aria-selected", String(name === state.tab));
+      if (panel) panel.classList.toggle("active", name === state.tab);
+    });
+    if (!fromSync) {
+      openMobilePanel();
+      writeURL();
+      window.setTimeout(resizeCharts, 80);
+    }
+  }
+
+  function openMobilePanel() {
+    if (window.innerWidth <= 900) {
+      el.sidePanel.classList.add("open");
+    }
+  }
+
+  function toggleMobilePanel() {
+    el.sidePanel.classList.toggle("open");
+  }
+
+  function bindEvents() {
+    el.cityFilter.addEventListener("change", function () {
+      state.city = el.cityFilter.value;
+      renderAll();
+    });
+    el.yearFilter.addEventListener("change", function () {
+      state.year = el.yearFilter.value;
+      renderAll();
+    });
+    el.monthFilter.addEventListener("change", function () {
+      state.month = el.monthFilter.value;
+      renderAll();
+    });
+    el.sourceFilter.addEventListener("change", function () {
+      state.source = el.sourceFilter.value;
+      renderAll();
+    });
+    el.dateFrom.addEventListener("change", function () {
+      state.from = el.dateFrom.value;
+      renderAll();
+    });
+    el.dateTo.addEventListener("change", function () {
+      state.to = el.dateTo.value;
+      renderAll();
+    });
+    el.searchInput.addEventListener("input", function () {
+      if (searchTimer) window.clearTimeout(searchTimer);
+      searchTimer = window.setTimeout(function () {
+        state.q = el.searchInput.value;
+        renderAll();
+      }, 220);
+    });
+    el.mapStyle.addEventListener("change", function () {
+      state.style = el.mapStyle.value;
+      if (map && STYLE_MAP[state.style]) map.setMapStyle(STYLE_MAP[state.style]);
+      writeURL();
+    });
+    el.filterToggle.addEventListener("click", function () {
+      const open = el.filterPanel.classList.toggle("open");
+      el.filterToggle.setAttribute("aria-expanded", String(open));
+    });
+    document.querySelectorAll(".segmented [data-mode]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        state.mode = button.dataset.mode;
+        syncControls();
+        renderAll();
+      });
+    });
+    document.querySelectorAll("[data-heat-role]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        state.heatRole = button.dataset.heatRole;
+        syncControls();
+        renderMap();
+        writeURL();
+      });
+    });
+    document.querySelectorAll(".tab-btn").forEach(function (button) {
+      button.addEventListener("click", function () {
+        selectTab(button.id.replace("tab", "").toLowerCase());
+      });
+    });
+    el.sheetHandle.addEventListener("click", toggleMobilePanel);
+    el.sheetMini.addEventListener("click", toggleMobilePanel);
+    el.fitBtn.addEventListener("click", function () {
+      if (state.trip !== "") {
+        const trip = trips[Number(state.trip)];
+        if (trip && trip.originPlaceId !== null && trip.destPlaceId !== null) {
+          fitPoints([getPlace(trip.originPlaceId), getPlace(trip.destPlaceId)]);
+        }
+      } else if (state.place) {
+        const place = getPlace(state.place);
+        if (place) fitPoints([place]);
+      } else {
+        scheduleFit(computePlaceStats(getVisibleTrips()));
+      }
+    });
+    el.zoomInBtn.addEventListener("click", function () {
+      if (map) map.zoomIn();
+    });
+    el.zoomOutBtn.addEventListener("click", function () {
+      if (map) map.zoomOut();
+    });
+    el.clearSelectionBtn.addEventListener("click", clearSelection);
+    el.resetBtn.addEventListener("click", function () {
+      Object.assign(state, DEFAULT_STATE);
+      state.place = "";
+      state.trip = "";
+      clearDriving();
+      if (infoWindow) infoWindow.close();
+      syncControls();
+      renderAll();
+      flashStatus("已重置视图", "ok");
+    });
+    el.copyBtn.addEventListener("click", function () {
+      copyText(location.href);
+    });
+    el.exportBtn.addEventListener("click", exportCSV);
+    el.tripTableBody.addEventListener("click", function (event) {
+      const row = event.target.closest("tr[data-id]");
+      if (row) selectTrip(Number(row.dataset.id));
+    });
+    el.placeList.addEventListener("click", function (event) {
+      const row = event.target.closest("[data-place-id]");
+      if (row) selectPlace(row.dataset.placeId, false);
+    });
+    document.querySelectorAll(".trip-table th.sortable").forEach(function (header) {
+      header.addEventListener("click", function () {
+        const key = header.dataset.sort;
+        if (state.sortKey === key) {
+          state.sortDir = state.sortDir === "asc" ? "desc" : "asc";
+        } else {
+          state.sortKey = key;
+          state.sortDir = key === "time" ? "desc" : "asc";
+        }
+        document.querySelectorAll(".trip-table th .arrow").forEach(function (arrow) {
+          arrow.textContent = "";
+        });
+        header.querySelector(".arrow").textContent = state.sortDir === "asc" ? "↑" : "↓";
+        renderTable();
+      });
+    });
+    document.addEventListener("keydown", function (event) {
+      const tag = document.activeElement ? document.activeElement.tagName : "";
+      if (event.key === "/" && tag !== "INPUT" && tag !== "TEXTAREA" && tag !== "SELECT") {
+        event.preventDefault();
+        el.searchInput.focus();
+      }
+      if (event.key === "Escape") {
+        if (el.filterPanel.classList.contains("open")) {
+          el.filterPanel.classList.remove("open");
+          el.filterToggle.setAttribute("aria-expanded", "false");
+        } else if (state.place || state.trip !== "") {
+          clearSelection();
+        } else if (window.innerWidth <= 900 && el.sidePanel.classList.contains("open")) {
+          el.sidePanel.classList.remove("open");
+        }
+      }
+    });
+    window.addEventListener("resize", function () {
+      if (map) map.resize();
+      resizeCharts();
+    });
+  }
+
+  function copyText(text) {
+    function fallback() {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand("copy");
+        flashStatus("视图链接已复制", "ok");
+      } catch (err) {
+        flashStatus("复制失败", "error");
+      }
+      document.body.removeChild(textarea);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        flashStatus("视图链接已复制", "ok");
+      }, fallback);
+    } else {
+      fallback();
+    }
+  }
+
+  function exportCSV() {
+    const visible = getVisibleTrips();
+    const headers = ["来源", "来源文件", "来源序号", "车型", "车型类别", "上车时间", "到达时间", "城市", "起点", "终点", "里程_公里", "金额_元", "备注", "起点经度", "起点纬度", "终点经度", "终点纬度"];
+    const rows = [headers];
+    visible.forEach(function (trip) {
+      const origin = getPlace(trip.originPlaceId);
+      const dest = getPlace(trip.destPlaceId);
+      rows.push([
+        trip.source,
+        trip.file,
+        trip.sourceIndex,
+        trip.car,
+        trip.carCat,
+        trip.pickup,
+        trip.arrival,
+        trip.city,
+        trip.origin,
+        trip.dest,
+        trip.distance,
+        trip.amount,
+        trip.note,
+        origin ? origin.lng : "",
+        origin ? origin.lat : "",
+        dest ? dest.lng : "",
+        dest ? dest.lat : ""
+      ]);
+    });
+    const csv = rows.map(function (row) {
+      return row.map(function (cell) {
+        const value = String(cell == null ? "" : cell);
+        return /[",\n\r]/.test(value) ? '"' + value.replace(/"/g, '""') + '"' : value;
+      }).join(",");
+    }).join("\r\n");
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "滴滴行程-筛选-" + new Date().toISOString().slice(0, 10) + ".csv";
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    window.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    flashStatus("已导出 " + visible.length + " 条行程", "ok");
+  }
+
+  function loadMapSDK(apiKey) {
+    el.keyOverlay.classList.add("hidden");
+    el.headerMeta.textContent = "正在加载地图";
+    if (window.__AMAP_SECURITY_JS_CODE__) {
+      window._AMapSecurityConfig = {
+        securityJsCode: window.__AMAP_SECURITY_JS_CODE__
+      };
+    }
+    const script = document.createElement("script");
+    script.src = "https://webapi.amap.com/maps?v=2.0&key=" + encodeURIComponent(apiKey);
+    script.async = true;
+    script.onload = function () {
+      if (!window.AMap) {
+        showKeyError("地图 SDK 加载失败，请检查 Key。");
+        return;
+      }
+      try {
+        initMap();
+      } catch (err) {
+        showKeyError("地图初始化失败：" + err.message);
+      }
+    };
+    script.onerror = function () {
+      showKeyError("无法连接高德地图服务，请检查网络。");
+    };
+    document.head.appendChild(script);
+  }
+
+  function showKeyError(message) {
+    el.keyOverlay.classList.remove("hidden");
+    el.keyError.textContent = message;
+  }
+
+  function initMap() {
+    AMap.plugin(["AMap.MarkerCluster", "AMap.HeatMap", "AMap.Driving"], function () {
+      map = new AMap.Map("map", {
+        zoom: 5,
+        center: [108, 35],
+        mapStyle: STYLE_MAP[state.style] || STYLE_MAP.light,
+        viewMode: "2D"
+      });
+      infoWindow = new AMap.InfoWindow({
+        offset: new AMap.Pixel(0, -34),
+        autoMove: true
+      });
+      pluginsReady = true;
+      el.headerMeta.textContent = "已加载 " + trips.length + " 条行程";
+      renderAll();
+      if (state.trip !== "") {
+        const trip = trips[Number(state.trip)];
+        if (trip) loadDriving(trip);
+      }
+      if (state.place !== "") {
+        const place = getPlace(state.place);
+        if (place) {
+          openInfoForPlace(place);
+          fitPoints([place]);
+        }
+      }
+    });
+  }
+
+  el.keyButton.addEventListener("click", function () {
+    const value = el.keyInput.value.trim();
+    if (!value) {
+      el.keyError.textContent = "请先粘贴 Key。";
       return;
     }
     try {
-      initMap();
+      localStorage.setItem("amap_key", value);
     } catch (err) {
-      showKeyError("地图初始化失败：" + err.message);
+      // private browsing may reject storage; continue with the current session key
     }
-  };
-  script.onerror = function () {
-    showKeyError("无法连接高德地图服务，请检查网络。");
-  };
-  document.head.appendChild(script);
-}
-
-function showKeyError(message) {
-  keyOverlay.classList.remove("hidden");
-  keyError.textContent = message;
-}
-
-keyButton.addEventListener("click", function () {
-  const value = keyInput.value.trim();
-  if (!value) {
-    keyError.textContent = "请先粘贴 Key。";
-    return;
-  }
-  localStorage.setItem("amap_key", value);
-  keyError.textContent = "";
-  loadMap(value);
-});
-
-function initMap() {
-  map = new AMap.Map("map", {
-    zoom: 5,
-    center: [106, 35],
-    mapStyle: "amap://styles/light",
-    viewMode: "2D"
+    el.keyError.textContent = "";
+    loadMapSDK(value);
   });
-  infoWindow = new AMap.InfoWindow({
-    offset: new AMap.Pixel(0, -76),
-    autoMove: true
-  });
-  buildIndex();
+
   populateFilters();
+  syncControls();
   bindEvents();
-  const params = new URLSearchParams(location.search);
-  if (params.get("city")) cityFilter.value = params.get("city");
-  if (params.get("year")) yearFilter.value = params.get("year");
-  if (params.get("source")) sourceFilter.value = params.get("source");
-  if (params.get("search")) searchInput.value = params.get("search");
-  if (params.get("lines") === "1") lineToggle.checked = true;
-  applyFilters();
-  const selectedParam = params.get("selected");
-  if (selectedParam && markerMap.has(selectedParam)) selectLocation(selectedParam);
-  keyState.textContent = "已加载 " + trips.length + " 条行程";
-}
+  renderAll();
+  initCharts();
+  window.setTimeout(resizeCharts, 120);
 
-function locationKey(city, role, name) {
-  return city + "|" + role + "|" + name;
-}
-
-function addLocation(city, role, place) {
-  if (!place || !place.lat || !place.lng) return;
-  const key = locationKey(city, role, place.name);
-  let item = markerMap.get(key);
-  if (!item) {
-    item = {
-      key: key,
-      city: city,
-      name: place.name,
-      lat: place.lat,
-      lng: place.lng,
-      matchedName: place.matched_name || "",
-      address: place.address || "",
-      marker: null,
-      tripIds: []
-    };
-    markerMap.set(key, item);
+  const apiKey = window.__AMAP_KEY__ || "";
+  let storedKey = "";
+  try {
+    storedKey = localStorage.getItem("amap_key") || "";
+  } catch (err) {
+    storedKey = "";
   }
-}
-
-function buildIndex() {
-  trips.forEach(function (trip, index) {
-    trip.id = index;
-    trip.pickupYear = trip.pickup ? trip.pickup.slice(0, 4) : "";
-    addLocation(trip.cityNorm, "起点", trip.o);
-    addLocation(trip.cityNorm, "终点", trip.d);
-    if (trip.o && trip.o.lat && trip.o.lng) {
-      const k = locationKey(trip.cityNorm, "起点", trip.o.name);
-      markerMap.get(k).tripIds.push(index);
-    }
-    if (trip.d && trip.d.lat && trip.d.lng) {
-      const k = locationKey(trip.cityNorm, "终点", trip.d.name);
-      markerMap.get(k).tripIds.push(index);
-    }
-  });
-
-  markerMap.forEach(function (item) {
-    const marker = new AMap.Marker({
-      position: [item.lng, item.lat],
-      content: "",
-      offset: new AMap.Pixel(-17, -17),
-      zIndex: 130,
-      title: item.name
-    });
-    marker.on("click", function () {
-      selectLocation(item.key);
-    });
-    item.marker = marker;
-    marker.setMap(null);
-  });
-
-  trips.forEach(function (trip) {
-    if (!trip.o || !trip.d) return;
-    const start = [trip.o.lng, trip.o.lat];
-    const end = [trip.d.lng, trip.d.lat];
-    const mid = [
-      start[0] + (end[0] - start[0]) * 0.68,
-      start[1] + (end[1] - start[1]) * 0.68
-    ];
-    const startLine = new AMap.Polyline({
-      path: [start, mid],
-      strokeColor: "#1677ff",
-      strokeWeight: 3,
-      strokeOpacity: 0.45,
-      strokeStyle: "solid",
-      lineJoin: "round",
-      zIndex: 50
-    });
-    const endLine = new AMap.Polyline({
-      path: [mid, end],
-      strokeColor: "#fa8c16",
-      strokeWeight: 6,
-      strokeOpacity: 0.72,
-      strokeStyle: "solid",
-      lineJoin: "round",
-      showDir: true,
-      dirColor: "#ffffff",
-      zIndex: 51
-    });
-    startLine.setMap(null);
-    endLine.setMap(null);
-    lines.push({ trip: trip, line: startLine, endLine: endLine });
-  });
-}
-
-function markerContent(item, startCount, destCount, selected) {
-  const total = startCount + destCount;
-  if (total <= 0) return "";
-  const cls = startCount > 0 && destCount > 0 ? "both" : (destCount > 0 ? "dest" : "start");
-  const sel = selected ? " selected" : "";
-  return '<div class="marker-dot ' + cls + sel + '">' + total + "</div>";
-}
-
-function matchesFilters(trip) {
-  if (cityFilter.value !== "all" && trip.cityNorm !== cityFilter.value) return false;
-  if (yearFilter.value !== "all" && trip.pickupYear !== yearFilter.value) return false;
-  if (sourceFilter.value !== "all" && trip.source !== sourceFilter.value) return false;
-  const q = searchInput.value.trim().toLowerCase();
-  if (q) {
-    const haystack = [
-      trip.origin,
-      trip.dest,
-      trip.o ? trip.o.matched_name : "",
-      trip.d ? trip.d.matched_name : ""
-    ].join(" ").toLowerCase();
-    if (haystack.indexOf(q) === -1) return false;
-  }
-  return true;
-}
-
-function tripUsesLocation(trip, key) {
-  if (!key || !trip) return false;
-  if (trip.o && locationKey(trip.cityNorm, "起点", trip.o.name) === key) return true;
-  if (trip.d && locationKey(trip.cityNorm, "终点", trip.d.name) === key) return true;
-  return false;
-}
-
-function clearSelection() {
-  selectedKey = "";
-  selectionLabel.textContent = "";
-  clearSelectionBtn.hidden = true;
-  selectedSection.hidden = true;
-  if (infoWindow) infoWindow.close();
-  applyFilters();
-}
-
-function selectLocation(key) {
-  if (!markerMap.has(key)) return;
-  if (selectedKey === key) {
-    clearSelection();
-    return;
-  }
-  selectedKey = key;
-  applyFilters();
-  const item = markerMap.get(selectedKey);
-  if (item) {
-    selectionLabel.textContent = item.name;
-    clearSelectionBtn.hidden = false;
-  }
-}
-
-function applyFilters() {
-  const visibleTrips = trips.filter(matchesFilters);
-  const visibleSet = new Set(visibleTrips.map(function (t) { return t.id; }));
-  const counts = new Map();
-
-  visibleTrips.forEach(function (trip) {
-    if (trip.o && trip.o.lat && trip.o.lng) {
-      const k = locationKey(trip.cityNorm, "起点", trip.o.name);
-      const c = counts.get(k) || { start: 0, dest: 0 };
-      c.start += 1;
-      counts.set(k, c);
-    }
-    if (trip.d && trip.d.lat && trip.d.lng) {
-      const k = locationKey(trip.cityNorm, "终点", trip.d.name);
-      const c = counts.get(k) || { start: 0, dest: 0 };
-      c.dest += 1;
-      counts.set(k, c);
-    }
-  });
-  currentCounts = counts;
-
-  if (selectedKey && !counts.has(selectedKey)) {
-    selectedKey = "";
-    selectionLabel.textContent = "";
-    clearSelectionBtn.hidden = true;
-    selectedSection.hidden = true;
-  }
-
-  const selectedTrips = selectedKey
-    ? visibleTrips.filter(function (t) { return tripUsesLocation(t, selectedKey); })
-    : [];
-  const selectedTripSet = new Set(selectedTrips.map(function (t) { return t.id; }));
-  const relatedKeys = new Set();
-  if (selectedKey) {
-    relatedKeys.add(selectedKey);
-    selectedTrips.forEach(function (t) {
-      if (t.o) relatedKeys.add(locationKey(t.cityNorm, "起点", t.o.name));
-      if (t.d) relatedKeys.add(locationKey(t.cityNorm, "终点", t.d.name));
-    });
-  }
-
-  const visibleMarkers = [];
-  markerMap.forEach(function (item) {
-    const c = counts.get(item.key) || { start: 0, dest: 0 };
-    const isRelated = !selectedKey || relatedKeys.has(item.key);
-    item.marker.setContent(markerContent(item, c.start, c.dest, item.key === selectedKey));
-    item.marker.setzIndex(item.key === selectedKey ? 160 : 130);
-    if (c.start + c.dest > 0 && isRelated) {
-      item.marker.setMap(map);
-      visibleMarkers.push(item.marker);
-    } else {
-      item.marker.setMap(null);
-    }
-  });
-
-  lines.forEach(function (entry) {
-    const showSelected = selectedKey && selectedTripSet.has(entry.trip.id);
-    const showAll = !selectedKey && lineToggle.checked && visibleSet.has(entry.trip.id);
-    if (showSelected) {
-      entry.line.setOptions({ strokeOpacity: 0.95, strokeWeight: 5, zIndex: 80 });
-      entry.endLine.setOptions({ strokeOpacity: 0.95, strokeWeight: 7, zIndex: 81 });
-    } else {
-      entry.line.setOptions({ strokeOpacity: 0.45, strokeWeight: 3, zIndex: 50 });
-      entry.endLine.setOptions({ strokeOpacity: 0.72, strokeWeight: 6, zIndex: 51 });
-    }
-    if (showSelected || showAll) {
-      entry.line.setMap(map);
-      entry.endLine.setMap(map);
-    } else {
-      entry.line.setMap(null);
-      entry.endLine.setMap(null);
-    }
-  });
-
-  updateStats(visibleTrips);
-  updateSelectedTrips(selectedTrips);
-  updateSummary(visibleTrips, counts);
-  if (selectedKey) {
-    fitSelected(selectedTrips);
+  if (apiKey || storedKey) {
+    loadMapSDK(apiKey || storedKey);
   } else {
-    fitMap(visibleMarkers);
+    el.keyOverlay.classList.remove("hidden");
   }
-}
-
-function fitMap(overlays) {
-  if (!map) return;
-  if (overlays.length) {
-    map.setFitView(overlays, false, [60, 60, 60, 60], 16);
-  } else {
-    map.setZoomAndCenter(5, [106, 35]);
-  }
-}
-
-function fitSelected(selectedTrips) {
-  if (!map) return;
-  const overlays = [];
-  selectedTrips.forEach(function (trip) {
-    if (trip.o && trip.o.lat && trip.o.lng) {
-      const key = locationKey(trip.cityNorm, "起点", trip.o.name);
-      const item = markerMap.get(key);
-      if (item && overlays.indexOf(item.marker) === -1) overlays.push(item.marker);
-    }
-    if (trip.d && trip.d.lat && trip.d.lng) {
-      const key = locationKey(trip.cityNorm, "终点", trip.d.name);
-      const item = markerMap.get(key);
-      if (item && overlays.indexOf(item.marker) === -1) overlays.push(item.marker);
-    }
-  });
-  if (overlays.length) {
-    map.setFitView(overlays, false, [80, 80, 80, 80], 16);
-  } else {
-    map.setZoomAndCenter(5, [106, 35]);
-  }
-}
-
-function updateStats(visibleTrips) {
-  let distance = 0;
-  let amount = 0;
-  visibleTrips.forEach(function (t) {
-    distance += parseNumber(t.distance);
-    amount += parseNumber(t.amount);
-  });
-  document.getElementById("statTrips").textContent = visibleTrips.length;
-  document.getElementById("statDistance").textContent = Math.round(distance).toLocaleString();
-  document.getElementById("statAmount").textContent = "¥" + Math.round(amount).toLocaleString();
-}
-
-function updateSelectedTrips(selectedTrips) {
-  if (!selectedKey) {
-    selectedSection.hidden = true;
-    selectedTripsList.innerHTML = "";
-    return;
-  }
-  selectedSection.hidden = false;
-  selectedTripsList.innerHTML = selectedTrips.slice(0, 8).map(function (t) {
-    const title = (t.pickup ? t.pickup.slice(0, 16) : "时间缺失") + " · " + t.origin + " → " + t.dest;
-    const meta = (t.amount ? "¥" + t.amount : "金额缺失") + (t.car ? " · " + t.car : "");
-    return '<div class="trip-row"><b title="' + esc(title) + '">' + esc(title) + "</b>" +
-      '<div class="trip-meta">' + esc(meta) + "</div></div>";
-  }).join("") || '<div class="trip-row"><b>无匹配行程</b></div>';
-}
-
-function updateSummary(visibleTrips, counts) {
-  const entries = [];
-  markerMap.forEach(function (item) {
-    const c = counts.get(item.key);
-    if (c && c.start + c.dest > 0) {
-      entries.push({
-        key: item.key,
-        name: item.name,
-        city: item.city,
-        total: c.start + c.dest,
-        start: c.start,
-        dest: c.dest
-      });
-    }
-  });
-  entries.sort(function (a, b) { return b.total - a.total; });
-  const list = document.getElementById("summaryList");
-  list.innerHTML = entries.slice(0, 8).map(function (e) {
-    const selected = e.key === selectedKey ? " selected" : "";
-    return '<div class="summary-row' + selected + '" data-key="' + esc(e.key) + '"><span class="name" title="' + esc(e.name) + '">' +
-      esc(e.name) + "</span><span class=\"roles\">起 " + e.start + " · 终 " + e.dest +
-      '</span><span class="count">' + e.total + "</span></div>";
-  }).join("") || '<div class="summary-row"><span class="name">无匹配地点</span></div>';
-}
-
-function openInfo(item) {
-  if (!map || !infoWindow) return;
-  const c = currentCounts.get(item.key) || { start: 0, dest: 0 };
-  const samples = item.tripIds.map(function (id) { return trips[id]; }).filter(function (t) {
-    return matchesFilters(t);
-  }).slice(0, 6);
-  const rows = samples.map(function (t) {
-    return '<div class="iw-item">' + esc(t.pickup ? t.pickup.slice(0, 16) : "时间缺失") +
-      " · " + esc(t.origin) + " → " + esc(t.dest) +
-      (t.amount ? " · ¥" + esc(t.amount) : "") + "</div>";
-  }).join("");
-  const matched = item.matchedName || item.name;
-  const address = item.address ? " · " + item.address : "";
-  infoWindow.setContent(
-    '<div class="iw"><div class="iw-title">' + esc(item.name) + "</div>" +
-    '<div class="iw-meta">' + esc(item.city) + " · " + esc(matched) + esc(address) + "</div>" +
-    '<div class="iw-counts"><span class="c-start">起点 ' + c.start + '</span><span class="c-dest">终点 ' + c.dest + "</span></div>" +
-    '<div class="iw-list">' + rows + "</div></div>"
-  );
-  infoWindow.open(map, [item.lng, item.lat]);
-}
-
-function populateFilters() {
-  const cityCounts = {};
-  const yearCounts = {};
-  const sourceCounts = {};
-  trips.forEach(function (t) {
-    cityCounts[t.cityNorm] = (cityCounts[t.cityNorm] || 0) + 1;
-    yearCounts[t.pickupYear || "未知"] = (yearCounts[t.pickupYear || "未知"] || 0) + 1;
-    sourceCounts[t.source] = (sourceCounts[t.source] || 0) + 1;
-  });
-
-  let html = '<option value="all">全部（' + trips.length + "）</option>";
-  Object.keys(cityCounts).sort().forEach(function (city) {
-    html += '<option value="' + esc(city) + '">' + esc(city) + "（" + cityCounts[city] + "）</option>";
-  });
-  cityFilter.innerHTML = html;
-
-  html = '<option value="all">全部年份</option>';
-  Object.keys(yearCounts).sort().forEach(function (year) {
-    html += '<option value="' + esc(year) + '">' + esc(year) + "（" + yearCounts[year] + "）</option>";
-  });
-  yearFilter.innerHTML = html;
-
-  html = '<option value="all">全部来源</option>';
-  Object.keys(sourceCounts).forEach(function (source) {
-    html += '<option value="' + esc(source) + '">' + esc(source) + "（" + sourceCounts[source] + "）</option>";
-  });
-  sourceFilter.innerHTML = html;
-}
-
-function bindEvents() {
-  cityFilter.addEventListener("change", applyFilters);
-  yearFilter.addEventListener("change", applyFilters);
-  sourceFilter.addEventListener("change", applyFilters);
-  searchInput.addEventListener("input", applyFilters);
-  lineToggle.addEventListener("change", applyFilters);
-  clearSelectionBtn.addEventListener("click", clearSelection);
-  document.getElementById("summaryList").addEventListener("click", function (event) {
-    const row = event.target.closest(".summary-row");
-    if (row && row.dataset.key) selectLocation(row.dataset.key);
-  });
-  window.addEventListener("resize", function () {
-    if (map) map.resize();
-  });
-}
-
-if (key) {
-  loadMap(key);
-} else {
-  keyOverlay.classList.remove("hidden");
-}
+})();
 </script>
 </body>
 </html>
